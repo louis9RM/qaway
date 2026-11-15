@@ -148,16 +148,31 @@ We would rather show a real, reproducible result with its limits stated than a s
 
 ## 6. How it works
 
+```mermaid
+flowchart LR
+  U["🚗 Driver — voice<br/>✏️ Analyst — polygon"] --> S["🔎 /api/buscar<br/>ASF · 2 latest NISAR passes"]
+  S --> A["⚙️ /api/analisis<br/>download GCOV + GUNW<br/>clip road corridor"]
+  A --> C["🏔️ Change<br/>log-ratio dB +<br/>Wishart/Conradsen"]
+  A --> D["📉 Deformation<br/>InSAR unwrapped<br/>phase → mm"]
+  A --> H["📡 Coherence<br/>coherenceMagnitude<br/>0–1"]
+  A --> F["🌊 Flooding<br/>Otsu + change<br/>(NASA ARSET)"]
+  C --> R{{"🧭 Fused result<br/>+ risk verdict"}}
+  D --> R
+  H --> R
+  F --> R
+  R --> V["🎙️ Driver<br/>AI agent narrates<br/>by voice"]
+  R --> P["📊 Analyst<br/>statistics dashboard<br/>on screen"]
+
+  classDef src fill:#0e2742,stroke:#2a7af0,color:#dCE9ff;
+  classDef proc fill:#13233a,stroke:#f2b134,color:#ffe9bd;
+  classDef out fill:#0e2a1f,stroke:#2fbf71,color:#c9f5df;
+  class U,S,A src;
+  class C,D,H,F,R proc;
+  class V,P out;
 ```
-Voice / polygon ──▶ /api/buscar (ASF, 2 latest NISAR passes)
-                 ──▶ /api/analisis (download GCOV+GUNW, clip polygon)
-                       ├─ change: log-ratio dB + Wishart/Conradsen  (ASF/NASA)
-                       ├─ deformation: InSAR unwrapped phase → mm   (NISAR GUNW)
-                       ├─ coherence: coherenceMagnitude 0–1         (NISAR GUNW)
-                       └─ flooding: Otsu threshold + change         (NASA ARSET)
-                 ──▶ driver: AI agent narrates by voice
-                 ──▶ analyst: statistics dashboard on screen
-```
+
+<sub>Data sources: **NISAR GCOV & GUNW via ASF (NASA)**, method guidance from **NASA ARSET**.
+The AI agent is an LLM with tool-calling (local Ollama/Qwen2.5, or the Google Gemini API).</sub>
 
 **Stack:** Python · FastAPI · numpy/scipy/h5py/rasterio · `asf-search` · MapLibre GL · Turf.js ·
 OpenStreetMap · Chart.js · Three.js (3D mascot) · an LLM agent (local Ollama/Qwen2.5, or Google
