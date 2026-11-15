@@ -21,6 +21,10 @@ In the early morning of **Sunday, 1 November 2026**, a landslide came down onto 
 **Puente Chino**, district of **Boquerón**, province of **Padre Abad**, region of **Ucayali**.
 Approximate point of the slide: **km 441+240** — coordinates **-9.085457, -75.731236** (WGS84).
 
+![Location of the landslide on the PE-5N highway, Santa Rosa, Padre Abad, Ucayali](docs/img/qaway-case-map.png)
+<sub>The exact slide point (red pin) on the **Federico Basadre highway (PE-5N)**, in the jungle
+corridor near Previsto — Santa Rosa, Padre Abad, Ucayali. Base map © OpenStreetMap.</sub>
+
 What the slide left behind:
 
 - **~140–200 meters of road buried** under mud, rocks and uprooted trees.
