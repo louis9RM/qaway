@@ -1,7 +1,6 @@
 # Qaway — Architecture Document
 
-> Follows the Attribute-Driven Design (ADD) method. As-built, coherent with the source code
-> in `spaceapps/sarvigia/`. (Product renamed SARvigía → **Qaway**; folder `sarvigia/` kept.)
+> Architecture of **Qaway**, documented with the Attribute-Driven Design (ADD) method.
 
 ## 1. Introduction
 Qaway is an open-source web app that turns **NISAR (NASA–ISRO)** radar into **spoken, actionable
