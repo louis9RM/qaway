@@ -1,6 +1,10 @@
 # Qaway — Estado del proyecto (avance)
 
-> Última actualización: 2026-11-14 (noche)
+> Última actualización: 2026-11-15 (día final del hackatón)
+> 🧑‍💻 **Repo público:** https://github.com/louis9RM/qaway
+> ☁️ **Migración a nube en curso:** LLM local Ollama/Qwen → **Gemini API** (sin GPU) para no
+> depender de la PC. Agente probado OK con `gemini-3.5-flash` (tool-calling + voz ES/EN).
+> Falta levantar la VM (Oracle Always Free) + Cloudflare Tunnel — ver `sarvigia/deploy/DESPLIEGUE_NUBE.md`.
 > Reto: **NASA Space Apps 2026 — "Dancing with the SARs"** (NISAR).
 > Equipo: **thecreator** — Lino Ever Ramos Maíz · Silvana Rossío Pacheco Malpartida.
 > Producto: **Qaway** (*"el que vigila"* en quechua) — app web que convierte el radar
@@ -20,9 +24,12 @@
 - 🎙️ **Por voz** (conductor, manos libres): pregunta → GPS → corredor de carretera → analiza → **responde hablando**.
 - ✏️ **Dibujar polígono** (analista): marca un área → analiza esa zona exacta.
 
-**Agente de IA agentic (el gancho):** LLM local **Ollama/Qwen2.5** con tool-calling;
-entiende cualquier pregunta (ES/EN, simple/técnico), **decide qué análisis correr** y narra
-por voz. 7 herramientas. Auto-reintento si el modelo se traba.
+**Agente de IA agentic (el gancho):** tool-calling con **doble proveedor** (`LLM_PROVIDER`):
+**Ollama/Qwen2.5** local (GPU) o **Gemini API** (nube, sin GPU). Entiende cualquier pregunta
+(ES/EN, simple/técnico), **decide qué análisis correr** y narra por voz. 7 herramientas.
+Reintentos + fallback de modelos si Google se satura (503).
+> Gemini: default `gemini-3.5-flash`. Clave del usuario en `~/robotica-remota/portal-datos/gemini.key`.
+> Nota técnica: Gemini 3.x exige reenviar `thoughtSignature` en el tool-calling (ya implementado).
 
 **Pipeline real:** dibujar/voz → `/api/buscar` (ASF, 2 últimas fechas auto) → `/api/analisis`
 (descarga GCOV+GUNW, recorta el polígono, procesa cambio+deformación+coherencia+inundación) →
