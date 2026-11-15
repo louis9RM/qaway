@@ -1,0 +1,9 @@
+# SARvigía — dependencias del módulo MCP
+asf-search>=14.1.0
+mcp>=2.0.0
+PyYAML>=6.0
+# Procesamiento SAR (ya lo usas en tus scripts)
+h5py>=3.8
+numpy>=1.24
+scipy>=1.10
+matplotlib>=3.7

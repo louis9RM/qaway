@@ -1,0 +1,11 @@
+{
+  "desplazamiento_max_mm": 41.6,
+  "tipo": "levantamiento",
+  "tasa_mm_por_semana": 24.3,
+  "pct_zona_en_movimiento_>10mm": 43.3,
+  "periodo_dias": 12,
+  "severidad_deformacion": "alta",
+  "interpretacion": "movimiento lento del terreno (posible deslizamiento en curso)",
+  "fuente": "NISAR GUNW · unwrappedPhase (InSAR banda L)",
+  "zona": "Huánuco"
+}

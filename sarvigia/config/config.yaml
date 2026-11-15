@@ -1,0 +1,32 @@
+# SARvigía — configuración NO secreta (este archivo SÍ va a git)
+# El token/credenciales NO van aquí: van en config/secrets.yaml (gitignored).
+
+# Dónde se guardan las escenas descargadas
+data_dir: "./data"
+
+# Parámetros por defecto para búsqueda en ASF
+asf:
+  # Dataset primario del reto. asf_search usa constantes; aquí guardamos el nombre
+  # legible y el módulo lo mapea. NISAR para el reto; se puede cambiar a
+  # SENTINEL-1 o ALOS PALSAR como proxy/suplemento (banda L).
+  dataset: "NISAR"
+  # Nivel de procesamiento por defecto (GCOV = Geocoded Covariance, lo que ya usas)
+  processing_level: "GCOV"
+  # Máximo de resultados por búsqueda
+  max_results: 50
+
+# Zonas monitoreadas ("hot zones") precalculadas.
+# bbox en EPSG:4326 [lon_min, lat_min, lon_max, lat_max] (aprox., ajustar)
+zonas:
+  chaglla:
+    nombre: "Represa Chaglla y laderas del embalse"
+    region: "Huánuco, Perú"
+    bbox: [-75.95, -9.80, -75.80, -9.65]
+    utm_epsg: 32718   # UTM 18S
+    descripcion: "Monitoreo de estabilidad de laderas y nivel del embalse."
+  huanuco_pucallpa:
+    nombre: "Carretera Huánuco–Pucallpa (tramo crítico)"
+    region: "Huánuco, Perú"
+    bbox: [-75.80, -9.40, -75.50, -9.10]
+    utm_epsg: 32718
+    descripcion: "Monitoreo de deslizamientos/derrumbes sobre la vía."

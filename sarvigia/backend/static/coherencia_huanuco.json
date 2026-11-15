@@ -1,0 +1,8 @@
+{
+  "coherencia_media": 0.673,
+  "pct_baja_coherencia_<0.3": 3.7,
+  "umbral_bajo": 0.3,
+  "interpretacion": "coherencia baja = superficie perturbada (posible deslizamiento)",
+  "fuente": "NISAR GUNW · coherenceMagnitude (banda L)",
+  "zona": "Huánuco"
+}

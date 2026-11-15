@@ -1,0 +1,19 @@
+# === SECRETS — never commit ===
+config/secrets.yaml
+*.secret
+.env
+
+# Data / large files
+data/
+*.h5
+*.tif
+*.tiff
+*.png
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env/

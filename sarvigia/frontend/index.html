@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Qaway — the one who watches</title>
+<meta name="description" content="Qaway: el radar que vigila los cerros y te avisa por voz. Detección de cambios de superficie (deslizamientos) con radar NISAR en los Andes del Perú.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
+<link rel="stylesheet" href="css/styles.css?v=30">
+</head>
+<body>
+<div class="app">
+  <!-- TOP -->
+  <header class="top">
+    <button class="hamb" id="hamb" aria-label="Menu">☰</button>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" stroke="var(--accent)" stroke-width="2" opacity=".5"/>
+        <circle cx="20" cy="20" r="11" stroke="var(--accent)" stroke-width="2" opacity=".7"/>
+        <circle cx="20" cy="20" r="3" fill="var(--accent)"/>
+        <path d="M20 20 L35 11" stroke="var(--accent-2)" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      Qaway <small>· the one who watches</small>
+    </div>
+    <label class="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="search" placeholder="Search place…" value="Huánuco, Peru" aria-label="Search place">
+    </label>
+    <button class="iconbtn" id="theme" title="Change theme">◐</button>
+    <button class="iconbtn" id="about" title="What is SAR?">?</button>
+  </header>
+
+  <!-- SIDE -->
+  <aside class="side" id="side">
+    <div class="assist">
+      <h3>🎙️ Ask Qaway</h3>
+      <div class="seg-row">
+        <div class="qseg" id="segIdioma" data-k="idioma">
+          <button data-v="es">🇵🇪 ES</button><button class="on" data-v="en">🇬🇧 EN</button>
+        </div>
+        <div class="qseg" id="segNivel" data-k="nivel">
+          <button class="on" data-v="sencillo">Simple</button><button data-v="tecnico">Technical</button>
+        </div>
+      </div>
+      <button class="btn mic" id="micBtn">Ask by voice</button>
+      <div class="ask-row">
+        <input id="askText" placeholder="…or type your question" aria-label="Question">
+        <button class="btn ghost" id="askBtn">Send</button>
+      </div>
+      <div class="radius-row">
+        <label class="fld compact">Analyze around me
+          <span class="radius-ctl"><input id="radiusKm" type="number" min="0.05" max="20" step="0.05" value="1"><b>km</b></span>
+        </label>
+        <button class="btn ghost" id="gpsBtn">📍 Use my location (GPS)</button>
+      </div>
+    </div>
+    <div>
+      <h3>Study area</h3>
+      <button class="btn" id="draw">✏️ Draw polygon</button>
+      <button class="btn ghost" id="analyze" style="margin-top:8px" disabled>Analyze area</button>
+      <button class="btn ghost" id="clear" style="margin-top:8px;display:none">Clear area</button>
+      <p class="drawhint" id="drawhint"></p>
+    </div>
+  </aside>
+
+  <!-- MAP -->
+  <div class="map">
+    <div id="map"></div>
+    <div class="basemaps" id="basemaps"></div>
+    <div class="joboverlay" id="joboverlay">
+      <div class="jobcard">
+        <h4>Processing area…</h4>
+        <p>Searching and processing NISAR data. Passes update every 12 days.</p>
+        <div class="bar"><i id="jobbar"></i></div>
+        <div class="jobstep" id="jobstep">Starting…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <footer class="bottom">
+    <div class="explain" id="explain">—</div>
+  </footer>
+
+  <div class="scrim" id="scrim"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script src="js/config.js?v=30"></script>
+<script src="js/app.js?v=30"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "umbral_agua_dB": -15.0,
+  "agua_fecha_A_km2": 1.8646,
+  "agua_fecha_B_km2": 2.3883,
+  "agua_nueva_km2": 1.5648,
+  "pct_zona_inundada": 2.0,
+  "metodo": "Umbral de Otsu + detección de cambios (NASA ARSET flood mapping)",
+  "fuente": "NISAR GCOV banda L",
+  "zona": "Huánuco"
+}

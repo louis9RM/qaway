@@ -1,0 +1,36 @@
+{
+  "png": "change_gcov_t83.png",
+  "coordinates": [
+    [
+      -76.29997358947257,
+      -9.879571384335208
+    ],
+    [
+      -76.17969426168806,
+      -9.8800142934675
+    ],
+    [
+      -76.18005382875266,
+      -9.980388066692193
+    ],
+    [
+      -76.30036979328307,
+      -9.979940569639961
+    ]
+  ],
+  "epsg": 32718,
+  "stats": {
+    "alpha": 0.01,
+    "metodo": "ASF log-ratio dB + Wishart/Conradsen (significancia por pixel)",
+    "polarizaciones": [
+      "HHHH",
+      "HVHV"
+    ],
+    "px_validos": 1466047,
+    "px_cambio": 5754,
+    "area_cambio_km2": 0.5754,
+    "pct_cambio": 0.392,
+    "aumento_km2": 0.232,
+    "disminucion_km2": 0.3434
+  }
+}

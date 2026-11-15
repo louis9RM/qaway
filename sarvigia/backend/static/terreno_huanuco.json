@@ -1,0 +1,10 @@
+{
+  "elevacion_min_m": 1843.0,
+  "elevacion_max_m": 3648.3,
+  "pendiente_media_grados": 22.1,
+  "pendiente_max_grados": 60.5,
+  "pct_laderas_empinadas_>25deg": 45.5,
+  "pct_laderas_muy_empinadas_>35deg": 12.2,
+  "fuente": "Copernicus GLO-30 DEM (~30 m)",
+  "zona": "Huánuco"
+}

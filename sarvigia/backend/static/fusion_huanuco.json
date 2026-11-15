@@ -1,0 +1,8 @@
+{
+  "confianza": "media",
+  "veredicto": "Cambio posible: solo una de las dos señales (intensidad o coherencia) es fuerte. Vigilar.",
+  "cambio_intensidad_pct": 0.39,
+  "coherencia_media": 0.673,
+  "pct_baja_coherencia": 3.7,
+  "metodo_fusion": "Intensidad (Wishart/ASF) + coherencia GUNW (banda L NISAR)"
+}

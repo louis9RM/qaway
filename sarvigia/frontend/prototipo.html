@@ -1,0 +1,508 @@
+<title>SARvigía</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: consola de monitoreo — mapa central, panel lateral de control, barra inferior de lectura */
+  :root{
+    --bg:#0c1118; --panel:#121a24; --panel-2:#18212e; --line:#243143;
+    --fg:#e8eef6; --muted:#8ba0b8; --faint:#5d708a;
+    --accent:#34d1c4; --accent-2:#2a9df0;
+    --ok:#2fbf71; --warn:#f2b134; --crit:#ef4a52;
+    --radius:14px; --shadow:0 8px 28px rgba(0,0,0,.35);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+    --bg:#eef2f7; --panel:#ffffff; --panel-2:#f4f7fb; --line:#dbe3ee;
+    --fg:#132033; --muted:#55657a; --faint:#8295ab;
+    --accent:#0ea79a; --accent-2:#1f7fd0;
+    --ok:#1f9d57; --warn:#c9881a; --crit:#d23a42;
+    --shadow:0 8px 24px rgba(28,45,70,.12); color-scheme:light;
+  }}
+  :root[data-theme="light"]{
+    --bg:#eef2f7; --panel:#ffffff; --panel-2:#f4f7fb; --line:#dbe3ee;
+    --fg:#132033; --muted:#55657a; --faint:#8295ab;
+    --accent:#0ea79a; --accent-2:#1f7fd0;
+    --ok:#1f9d57; --warn:#c9881a; --crit:#d23a42;
+    --shadow:0 8px 24px rgba(28,45,70,.12); color-scheme:light;
+  }
+  :root[data-theme="dark"]{ color-scheme:dark; }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);
+    -webkit-font-smoothing:antialiased;overflow:hidden}
+  @media(max-width:860px){ body{overflow:auto} }
+
+  .app{display:grid;grid-template-columns:300px 1fr;grid-template-rows:56px 1fr auto;
+    grid-template-areas:"top top" "side map" "side bottom";height:100%;}
+  @media(max-width:860px){
+    .app{grid-template-columns:1fr;grid-template-rows:auto auto 60vh auto;
+      grid-template-areas:"top" "side" "map" "bottom";height:auto}
+  }
+
+  /* ---- Top bar ---- */
+  .top{grid-area:top;display:flex;align-items:center;gap:14px;
+    padding-left:max(18px,env(safe-area-inset-left,0px));
+    padding-right:max(18px,env(safe-area-inset-right,0px));
+    background:var(--panel);border-bottom:1px solid var(--line);z-index:5}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:700;
+    font-size:19px;letter-spacing:.3px}
+  .logo{width:30px;height:30px;flex:none}
+  .brand small{font-family:var(--body);font-weight:500;color:var(--muted);font-size:12px;
+    margin-left:2px}
+  .top .search{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:10px;padding:7px 11px;color:var(--muted);
+    font-size:13px;min-width:0;max-width:230px;flex:1}
+  .top .search input{border:0;background:transparent;color:var(--fg);outline:none;width:100%;
+    font-family:var(--body);font-size:13px}
+  .iconbtn{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel-2);color:var(--muted);cursor:pointer}
+  .iconbtn:hover{color:var(--fg);border-color:var(--accent)}
+
+  /* ---- Side panel ---- */
+  .side{grid-area:side;background:var(--panel);border-right:1px solid var(--line);
+    padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+  @media(max-width:860px){ .side{border-right:0;border-bottom:1px solid var(--line)} }
+  .side h3{font-family:var(--disp);font-size:12px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 10px}
+  .zones{display:flex;flex-direction:column;gap:8px}
+  .zone{display:flex;gap:10px;align-items:flex-start;padding:10px 11px;border-radius:11px;
+    border:1px solid var(--line);background:var(--panel-2);cursor:pointer;transition:.15s}
+  .zone:hover{border-color:var(--accent)}
+  .zone.active{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .zone .dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none}
+  .zone b{font-size:13.5px;font-weight:600;display:block;font-family:var(--disp)}
+  .zone span{font-size:11.5px;color:var(--muted)}
+  .zone .stat{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted);
+    text-align:right;white-space:nowrap}
+
+  .layers{display:flex;flex-direction:column;gap:7px}
+  .layer{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;
+    border:1px solid var(--line);background:var(--panel-2);cursor:pointer;font-size:13px}
+  .layer:hover{border-color:var(--accent)}
+  .layer .sw{width:26px;height:14px;border-radius:7px;background:var(--line);position:relative;
+    flex:none;transition:.15s}
+  .layer .sw::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;
+    border-radius:50%;background:var(--muted);transition:.15s}
+  .layer.on .sw{background:var(--accent)}
+  .layer.on .sw::after{left:14px;background:#06201d}
+  .layer .meta{display:flex;flex-direction:column;min-width:0}
+  .layer .meta small{color:var(--muted);font-size:11px}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;
+    border-radius:11px;border:0;cursor:pointer;font-family:var(--disp);font-weight:600;font-size:13.5px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#042; color:#04201d}
+  .btn:disabled{opacity:.6;cursor:default}
+
+  /* ---- Map ---- */
+  .map{grid-area:map;position:relative;overflow:hidden;background:#0a0f16}
+  :root[data-theme="light"] .map, :root:not([data-theme="dark"]) .map{background:#dfe7f0}
+  @media (prefers-color-scheme:light){ :root:not([data-theme="dark"]) .map{background:#dfe7f0} }
+  #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .divider{position:absolute;top:0;bottom:0;width:2px;background:var(--fg);opacity:.9;
+    cursor:ew-resize;z-index:3}
+  .divider::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:30px;height:30px;border-radius:50%;background:var(--fg);box-shadow:var(--shadow)}
+  .divider::after{content:"⇆";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    font-size:14px;color:var(--bg);font-weight:700}
+  .dlabel{position:absolute;top:12px;padding:4px 9px;border-radius:7px;font-family:var(--mono);
+    font-size:11px;background:var(--panel);border:1px solid var(--line);color:var(--fg);z-index:3}
+  .dlabel.l{left:12px} .dlabel.r{right:12px}
+
+  .legend{position:absolute;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:11px 12px;z-index:3;box-shadow:var(--shadow);max-width:180px}
+  .legend h4{margin:0 0 8px;font-family:var(--disp);font-size:11px;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted)}
+  .ramp{height:10px;border-radius:5px;margin-bottom:5px}
+  .legend .ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;
+    color:var(--muted)}
+
+  .pin{position:absolute;transform:translate(-50%,-100%);z-index:2;cursor:pointer;
+    font-size:11px;font-family:var(--disp);font-weight:600;white-space:nowrap;pointer-events:none}
+  .pin .b{display:flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--line);
+    padding:3px 8px;border-radius:20px;box-shadow:var(--shadow)}
+  .pin .b::before{content:"";width:8px;height:8px;border-radius:50%}
+
+  .joboverlay{position:absolute;inset:0;background:rgba(6,10,16,.78);z-index:6;display:none;
+    place-items:center;backdrop-filter:blur(3px)}
+  .joboverlay.show{display:grid}
+  .jobcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 26px;
+    width:min(340px,86vw);text-align:center;box-shadow:var(--shadow)}
+  .jobcard h4{font-family:var(--disp);margin:0 0 6px}
+  .jobcard p{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  .bar{height:8px;border-radius:6px;background:var(--panel-2);overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    transition:width .3s}
+  .jobstep{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:10px}
+
+  /* ---- Bottom bar ---- */
+  .bottom{grid-area:bottom;background:var(--panel);border-top:1px solid var(--line);
+    padding:13px max(18px,env(safe-area-inset-right,0px)) calc(13px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));
+    display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center}
+  @media(max-width:860px){ .bottom{grid-template-columns:1fr;gap:14px} }
+
+  .risk{display:flex;align-items:center;gap:13px}
+  .semaforo{display:flex;flex-direction:column;gap:4px;padding:7px;border-radius:12px;
+    background:var(--panel-2);border:1px solid var(--line)}
+  .semaforo i{width:14px;height:14px;border-radius:50%;background:var(--line);opacity:.25;transition:.2s}
+  .semaforo.g i.g{background:var(--ok);opacity:1;box-shadow:0 0 10px var(--ok)}
+  .semaforo.y i.y{background:var(--warn);opacity:1;box-shadow:0 0 10px var(--warn)}
+  .semaforo.r i.r{background:var(--crit);opacity:1;box-shadow:0 0 10px var(--crit)}
+  .risk .txt b{font-family:var(--disp);font-size:15px;display:block}
+  .risk .txt span{font-size:12px;color:var(--muted)}
+  .risk .rate{font-family:var(--mono);font-size:22px;font-weight:500;margin-left:4px}
+
+  .timeline{min-width:0}
+  .tl-top{display:flex;align-items:center;gap:12px;margin-bottom:7px}
+  .play{width:36px;height:36px;flex:none;border-radius:50%;border:0;cursor:pointer;display:grid;
+    place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04201d}
+  .tl-date{font-family:var(--mono);font-size:13px}
+  .tl-date b{color:var(--accent)}
+  #scrub{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:5px;
+    background:var(--panel-2);outline:none}
+  #scrub::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:var(--accent);cursor:pointer;border:2px solid var(--panel)}
+  #scrub::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);
+    cursor:pointer;border:2px solid var(--panel)}
+  .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;
+    color:var(--faint);margin-top:3px}
+
+  .explain{font-size:12.5px;color:var(--muted);max-width:260px;line-height:1.45}
+  .explain b{color:var(--fg)}
+  @media(max-width:860px){ .explain{max-width:none} }
+
+  .tag{font-family:var(--mono);font-size:10px;color:var(--accent);border:1px solid var(--accent);
+    padding:1px 6px;border-radius:5px;opacity:.8}
+</style>
+
+<div class="app">
+  <!-- TOP -->
+  <div class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" stroke="var(--accent)" stroke-width="2" opacity=".5"/>
+        <circle cx="20" cy="20" r="11" stroke="var(--accent)" stroke-width="2" opacity=".7"/>
+        <circle cx="20" cy="20" r="3" fill="var(--accent)"/>
+        <path d="M20 20 L35 11" stroke="var(--accent-2)" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      SARvigía <small>· centinela de radar</small>
+    </div>
+    <label class="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input placeholder="Buscar lugar…" value="Huánuco, Perú">
+    </label>
+    <button class="iconbtn" id="theme" title="Tema">◐</button>
+    <button class="iconbtn" title="¿Qué es SAR?">?</button>
+  </div>
+
+  <!-- SIDE -->
+  <div class="side">
+    <div>
+      <h3>Zonas monitoreadas</h3>
+      <div class="zones" id="zones"></div>
+    </div>
+    <div>
+      <h3>Capas</h3>
+      <div class="layers" id="layers"></div>
+    </div>
+    <div>
+      <h3>Nueva zona</h3>
+      <button class="btn" id="analyze">＋ Analizar área dibujada</button>
+    </div>
+    <div style="margin-top:auto;font-size:11px;color:var(--faint);line-height:1.5">
+      <span class="tag">PROTOTIPO</span> Datos simulados. El mapa real usará MapLibre + tiles NISAR.
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map" id="map">
+    <canvas id="cv"></canvas>
+    <div class="dlabel l" id="labL">— —</div>
+    <div class="dlabel r" id="labR">— —</div>
+    <div class="divider" id="divider" style="left:50%"></div>
+    <div class="legend">
+      <h4 id="legTitle">Deformación (mm)</h4>
+      <div class="ramp" id="ramp"></div>
+      <div class="ends"><span id="legMin">−40</span><span>0</span><span id="legMax">+10</span></div>
+    </div>
+    <div class="joboverlay" id="joboverlay">
+      <div class="jobcard">
+        <h4>Procesando nueva zona…</h4>
+        <p>Descargando y procesando datos NISAR. Las pasadas se actualizan cada 12 días.</p>
+        <div class="bar"><i id="jobbar"></i></div>
+        <div class="jobstep" id="jobstep">Buscando escenas en ASF…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom">
+    <div class="risk">
+      <div class="semaforo" id="sema"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+      <div class="txt"><b id="riskLabel">—</b><span id="riskSub">Selecciona una zona</span></div>
+      <div class="rate" id="rate">—</div>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-top">
+        <button class="play" id="play" aria-label="Reproducir">▶</button>
+        <div class="tl-date">Comparando <b id="dA">—</b> → <b id="dB">—</b></div>
+      </div>
+      <input type="range" id="scrub" min="0" max="11" value="11" step="1">
+      <div class="ticks" id="ticks"></div>
+    </div>
+
+    <div class="explain" id="explain">—</div>
+  </div>
+</div>
+
+<script>
+// ---------- Datos simulados (serie NISAR 12 días) ----------
+const DATES = ['19 Jun','01 Jul','13 Jul','25 Jul','06 Ago','18 Ago','30 Ago','11 Sep','23 Sep','05 Oct','17 Oct','29 Oct'];
+const ZONES = [
+  {id:'huanuco', name:'Ciudad de Huánuco', sub:'Valle del Huallaga', color:'#2a9df0',
+   cx:0.42, cy:0.55, severity:0.9, pin:{x:0.42,y:0.5}},
+  {id:'chaglla', name:'Represa Chaglla', sub:'Laderas del embalse', color:'#34d1c4',
+   cx:0.72, cy:0.40, severity:0.55, pin:{x:0.72,y:0.37}},
+  {id:'carretera', name:'Carretera Huánuco–Pucallpa', sub:'Tramo crítico km 86', color:'#f2b134',
+   cx:0.60, cy:0.72, severity:0.75, pin:{x:0.6,y:0.69}},
+];
+const LAYERS = [
+  {id:'gunw', name:'Deformación', sub:'GUNW · mm línea de vista', on:true},
+  {id:'gcov', name:'Cambios', sub:'GCOV · retrodispersión', on:false},
+  {id:'coh',  name:'Coherencia', sub:'confiabilidad del dato', on:false},
+  {id:'opt',  name:'Óptico (contexto)', sub:'relieve base', on:false},
+];
+
+let state = {zone:'huanuco', layer:'gunw', t:11, divider:0.5, playing:false};
+
+// instabilidad: centros gaussianos por zona (en coords del mapa 0..1)
+const CENTERS = [
+  {zone:'huanuco', x:0.36,y:0.46,s:0.07,amp:1.0},
+  {zone:'huanuco', x:0.47,y:0.60,s:0.06,amp:0.7},
+  {zone:'chaglla', x:0.70,y:0.36,s:0.06,amp:0.6},
+  {zone:'carretera', x:0.58,y:0.70,s:0.05,amp:0.85},
+  {zone:'carretera', x:0.64,y:0.75,s:0.045,amp:0.6},
+];
+
+// crecimiento temporal: lento y luego acelera en temporada (hacia fin)
+function growth(t){ const f=t/(DATES.length-1); return Math.pow(f,1.7)*0.85 + f*0.15; }
+
+// valor de deformación (mm, negativo = hundimiento) en un punto para tiempo t
+function deformAt(x,y,t){
+  let v=0;
+  for(const c of CENTERS){
+    const d2=((x-c.x)**2+(y-c.y)**2)/(2*c.s*c.s);
+    v += c.amp*Math.exp(-d2);
+  }
+  return -v*growth(t)*46; // escala a mm
+}
+
+// ---------- Canvas / mapa estilizado ----------
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+let W=0,H=0,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){
+  const r=document.getElementById('map').getBoundingClientRect();
+  W=r.width;H=r.height; cv.width=W*DPR;cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+  placePins(); render();
+}
+new ResizeObserver(resize).observe(document.getElementById('map'));
+
+// paleta diverging para deformación: azul(−) ... neutro ... rojo(+)
+function colDeform(mm){
+  const t=Math.max(-40,Math.min(10,mm));
+  if(t<0){ const k=(-t)/40; return `rgba(${Math.round(40+k*200)},${Math.round(90+k*40)},${Math.round(230-k*60)},${0.15+0.7*k})`; }
+  const k=t/10; return `rgba(${Math.round(240)},${Math.round(90-k*30)},${Math.round(80-k*30)},${0.15+0.5*k})`;
+}
+function colChange(mm){ const k=Math.min(1,Math.abs(mm)/40); return `rgba(242,177,52,${0.08+0.7*k})`; }
+function colCoh(x,y){ // coherencia: baja cerca del río y zonas inestables
+  const riverD=Math.abs(y-(0.3+0.35*x)); const veg=0.5+0.5*Math.sin(x*22)*Math.cos(y*18);
+  const coh=Math.max(0,Math.min(1, riverD*2.2 - veg*0.15));
+  return `rgba(${Math.round(50+coh*20)},${Math.round(120+coh*110)},${Math.round(90+coh*60)},${0.2+0.5*(1-coh)})`;
+}
+
+function drawTerrain(){
+  // fondo
+  const dark=getComputedStyle(document.documentElement).getPropertyValue('--map-dark');
+  ctx.clearRect(0,0,W,H);
+  // relieve procedural (hillshade estilizado)
+  const cols=90, rows=Math.round(cols*H/W);
+  const cw=W/cols, ch=H/rows;
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    const x=i/cols, y=j/rows;
+    let h=0;
+    h+=Math.sin(x*7+1)*Math.cos(y*6);
+    h+=0.5*Math.sin(x*15+y*9);
+    h+=0.3*Math.cos(x*26-y*20);
+    const shade=0.5+0.22*h;
+    const g=Math.max(0,Math.min(1,shade));
+    const base = isLight()? [181+g*50,196+g*45,208+g*40] : [18+g*26,28+g*34,40+g*40];
+    ctx.fillStyle=`rgb(${base[0]|0},${base[1]|0},${base[2]|0})`;
+    ctx.fillRect(i*cw,j*ch,cw+1,ch+1);
+  }
+  // río Huallaga (curva)
+  ctx.lineWidth=Math.max(6,W*0.012); ctx.lineCap='round';
+  ctx.strokeStyle=isLight()?'rgba(90,140,200,.7)':'rgba(70,120,180,.75)';
+  ctx.beginPath();
+  for(let i=0;i<=100;i++){ const x=i/100*W; const y=(0.3+0.35*(i/100))*H + Math.sin(i/9)*8; i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.stroke();
+}
+
+function drawOverlay(dividerPx){
+  if(state.layer==='opt') return; // solo relieve
+  const cols=46, rows=Math.round(cols*H/W);
+  const cw=W/cols, ch=H/rows;
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    const x=(i+0.5)/cols, y=(j+0.5)/rows;
+    // qué fecha mostrar según lado del divisor
+    const px=i*cw;
+    const t = px < dividerPx ? 0 : state.t;   // izquierda = línea base (19 Jun), derecha = fecha actual
+    let fill;
+    if(state.layer==='gunw'){ const mm=deformAt(x,y,t); if(Math.abs(mm)<2) continue; fill=colDeform(mm); }
+    else if(state.layer==='gcov'){ const mm=deformAt(x,y,t); if(Math.abs(mm)<4) continue; fill=colChange(mm); }
+    else if(state.layer==='coh'){ fill=colCoh(x,y); }
+    ctx.fillStyle=fill;
+    roundRect(i*cw+0.5,j*ch+0.5,cw-1,ch-1,2); ctx.fill();
+  }
+}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+function drawAOI(){
+  const z=ZONES.find(z=>z.id===state.zone); if(!z) return;
+  const x=z.cx*W,y=z.cy*H, rw=W*0.17, rh=H*0.2;
+  ctx.save();
+  ctx.setLineDash([7,5]); ctx.lineWidth=2; ctx.strokeStyle=z.color;
+  ctx.fillStyle=z.color.replace(')',',.08)').replace('rgb','rgba');
+  roundRect(x-rw/2,y-rh/2,rw,rh,10); ctx.stroke();
+  ctx.fillStyle=isLight()?'rgba(40,120,180,.06)':'rgba(52,209,196,.07)';
+  ctx.fill();
+  ctx.restore();
+}
+
+function render(){
+  const dividerPx = state.divider*W;
+  drawTerrain(); drawOverlay(dividerPx); drawAOI();
+  updateReadout();
+}
+function isLight(){
+  const a=document.documentElement.getAttribute('data-theme');
+  if(a==='light')return true; if(a==='dark')return false;
+  return matchMedia('(prefers-color-scheme: light)').matches;
+}
+
+// ---------- Pins ----------
+function placePins(){
+  document.querySelectorAll('.pin').forEach(p=>p.remove());
+  for(const z of ZONES){
+    const el=document.createElement('div'); el.className='pin';
+    el.style.left=(z.pin.x*W)+'px'; el.style.top=(z.pin.y*H)+'px';
+    el.innerHTML=`<div class="b" style="--c:${z.color}">${z.name}</div>`;
+    el.querySelector('.b').style.cssText+=`;`;
+    el.querySelector('.b').insertAdjacentHTML('afterbegin',`<span style="width:8px;height:8px;border-radius:50%;background:${z.color};display:inline-block"></span>`);
+    document.getElementById('map').appendChild(el);
+  }
+}
+
+// ---------- Lectura (semáforo / tasa / explicación) ----------
+function updateReadout(){
+  const z=ZONES.find(z=>z.id===state.zone);
+  // deformación máxima dentro de la AOI a la fecha actual
+  let maxmm=0;
+  for(const c of CENTERS){ if(c.zone!==z.id) continue;
+    const mm=deformAt(c.x,c.y,state.t); if(Math.abs(mm)>Math.abs(maxmm)) maxmm=mm; }
+  const ratePerYear = maxmm * (365/ (12*(state.t+1)||1)) ; // aprox mm/año
+  const abs=Math.abs(maxmm);
+  const sema=document.getElementById('sema');
+  sema.className='semaforo '+(abs<10?'g':abs<28?'y':'r');
+  const lab=abs<10?'Estable':abs<28?'En movimiento':'Crítico — acelerando';
+  document.getElementById('riskLabel').textContent=lab;
+  document.getElementById('riskSub').textContent=z.name;
+  document.getElementById('rate').textContent=(maxmm>0?'+':'')+maxmm.toFixed(0)+' mm';
+  document.getElementById('rate').style.color = abs<10?'var(--ok)':abs<28?'var(--warn)':'var(--crit)';
+  const ex=document.getElementById('explain');
+  const trend = state.t>7?'acelerando con el inicio de la temporada de lluvias':'con movimiento leve y estable';
+  if(state.layer==='coh') ex.innerHTML=`<b>Coherencia:</b> zonas oscuras (río, vegetación densa) son poco confiables para InSAR. La banda L de NISAR mantiene coherencia donde la banda C falla.`;
+  else if(state.layer==='gcov') ex.innerHTML=`<b>Cambios (GCOV):</b> resalta dónde cambió la retrodispersión — cicatrices de deslizamiento, suelo expuesto y agua en <b>${z.name}</b>.`;
+  else if(state.layer==='opt') ex.innerHTML=`<b>Relieve base</b> del valle del Huallaga para dar contexto a las capas de radar.`;
+  else ex.innerHTML=`La ladera en <b>${z.name}</b> muestra ~<b>${abs.toFixed(0)} mm</b> de deformación acumulada al ${DATES[state.t]}, ${trend}.`;
+}
+
+// ---------- UI ----------
+function buildSide(){
+  const zc=document.getElementById('zones');
+  zc.innerHTML=ZONES.map(z=>`<div class="zone ${z.id===state.zone?'active':''}" data-z="${z.id}">
+    <span class="dot" style="background:${z.color}"></span>
+    <span><b>${z.name}</b><span>${z.sub}</span></span>
+    <span class="stat">${z.id===state.zone?'●':''}</span></div>`).join('');
+  zc.querySelectorAll('.zone').forEach(el=>el.onclick=()=>{state.zone=el.dataset.z;buildSide();render();});
+  const lc=document.getElementById('layers');
+  lc.innerHTML=LAYERS.map(l=>`<div class="layer ${l.id===state.layer?'on':''}" data-l="${l.id}">
+    <span class="sw"></span><span class="meta">${l.name}<small>${l.sub}</small></span></div>`).join('');
+  lc.querySelectorAll('.layer').forEach(el=>el.onclick=()=>{state.layer=el.dataset.l;buildSide();syncLegend();render();});
+}
+function syncLegend(){
+  const t=document.getElementById('legTitle'), ramp=document.getElementById('ramp');
+  const mn=document.getElementById('legMin'),mx=document.getElementById('legMax');
+  if(state.layer==='gunw'){t.textContent='Deformación (mm)';ramp.style.background='linear-gradient(90deg,#2a7af0,#95a8c0,#ef4a52)';mn.textContent='−40';mx.textContent='+10';}
+  else if(state.layer==='gcov'){t.textContent='Cambio (GCOV)';ramp.style.background='linear-gradient(90deg,transparent,#f2b134)';mn.textContent='0';mx.textContent='alto';}
+  else if(state.layer==='coh'){t.textContent='Coherencia';ramp.style.background='linear-gradient(90deg,#1a2a20,#2fbf71)';mn.textContent='baja';mx.textContent='alta';}
+  else {t.textContent='Relieve';ramp.style.background='linear-gradient(90deg,#334,#889)';mn.textContent='valle';mx.textContent='cumbre';}
+}
+function buildTicks(){
+  document.getElementById('ticks').innerHTML=DATES.map((d,i)=>i%2===0?`<span>${d.split(' ')[0]}</span>`:'<span></span>').join('');
+}
+function syncDates(){
+  document.getElementById('dA').textContent=DATES[0];
+  document.getElementById('dB').textContent=DATES[state.t];
+  document.getElementById('labL').textContent='◄ '+DATES[0];
+  document.getElementById('labR').textContent=DATES[state.t]+' ►';
+}
+
+// divisor arrastrable
+let dragging=false;
+const divider=document.getElementById('divider'), mapEl=document.getElementById('map');
+function setDivider(clientX){
+  const r=mapEl.getBoundingClientRect();
+  let p=(clientX-r.left)/r.width; p=Math.max(.05,Math.min(.95,p));
+  state.divider=p; divider.style.left=(p*100)+'%'; render();
+}
+divider.addEventListener('pointerdown',e=>{dragging=true;divider.setPointerCapture(e.pointerId);});
+divider.addEventListener('pointermove',e=>{if(dragging)setDivider(e.clientX);});
+divider.addEventListener('pointerup',()=>dragging=false);
+
+// scrub / play
+const scrub=document.getElementById('scrub');
+scrub.addEventListener('input',()=>{state.t=+scrub.value;syncDates();render();});
+let timer=null;
+document.getElementById('play').onclick=function(){
+  state.playing=!state.playing; this.textContent=state.playing?'⏸':'▶';
+  if(state.playing){ timer=setInterval(()=>{
+    state.t=(state.t+1)%DATES.length; scrub.value=state.t; syncDates(); render();
+  },650);} else clearInterval(timer);
+};
+
+// job simulation
+document.getElementById('analyze').onclick=()=>{
+  const ov=document.getElementById('joboverlay'), bar=document.getElementById('jobbar'), step=document.getElementById('jobstep');
+  ov.classList.add('show'); bar.style.width='0';
+  const steps=['Buscando escenas en ASF…','Agrupando por geometría (track/dirección)…','Descargando par comparable (NISAR GCOV)…','Recortando al polígono…','Detectando cambios / deformación…','Generando tiles…'];
+  let k=0; bar.style.width='6%';
+  const iv=setInterval(()=>{ k++; step.textContent=steps[Math.min(k,steps.length-1)];
+    bar.style.width=Math.min(100,6+k*17)+'%';
+    if(k>=steps.length){ clearInterval(iv); setTimeout(()=>{ov.classList.remove('show');},500);} },700);
+};
+
+// theme toggle
+document.getElementById('theme').onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const next = cur==='dark'?'light':cur==='light'?'dark': (isLight()?'dark':'light');
+  document.documentElement.setAttribute('data-theme',next);
+  syncLegend(); render();
+};
+
+// init
+buildSide(); syncLegend(); buildTicks(); syncDates(); resize();
+</script>
