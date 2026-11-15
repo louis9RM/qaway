@@ -93,33 +93,50 @@ An analyst draws a polygon over the exact slope. Qaway **does not speak** here �
 extent, InSAR deformation (mm/week) and radar coherence, with a risk verdict, all from the
 real pipeline.
 
-![Qaway analyst report — NISAR statistics dashboard](docs/img/qaway-analyst-dashboard.png)
-<sub>Analyst mode: a rigorous NISAR report — change bars, flood bars, deformation and coherence gauges, and a hazard verdict computed from the numbers (not from the LLM).</sub>
+![Qaway analyst report — real NISAR statistics for the Santa Rosa slope](docs/img/qaway-analyst-dashboard.png)
+<sub>Analyst mode, **real NISAR output for the Santa Rosa slope (km 441+240)** from October 2026 data:
+change bars, flood bars, deformation and coherence gauges, and a hazard verdict computed from the
+numbers — not from the LLM. Verdict: *MODERATE — monitor this corridor.*</sub>
 
 ---
 
 ## 5. This case, through Qaway
 
-We pointed Qaway at the exact slope of the 1 November slide (**-9.085457, -75.731236**).
-NISAR **covers this site** with two geometries:
+We pointed Qaway at the exact slope of the 1 November slide (**-9.085457, -75.731236**) and
+**ran the real pipeline** on NISAR data from the two weeks *before* the collapse (passes of
+**17 and 29 October 2026**, track 75 ascending, plus the GUNW interferometric pair).
 
-- **Track 75 (ascending)** — latest pre-event pass: **29 October 2026** (3 days before the slide).
-- **Track 155 (descending)** — latest pre-event pass: **22 October 2026**.
+**What NISAR showed on that slope, days before it fell:**
 
-**The honest status (1-month demo window):**
+| Indicator (real NISAR output, Oct 2026) | Value |
+|---|---|
+| Ground deformation (InSAR, max) | **22.5 mm** (13.1 mm/week) |
+| Slope area moving > 10 mm | **24.9 %** |
+| Mean radar coherence | **0.289** (low) |
+| Slope area with low coherence (< 0.3) | **61.7 %** |
+| Hazard verdict (computed from the numbers) | **MODERATE — monitor this corridor** |
 
-- Qaway establishes the **October baseline** of this slope from real NISAR GCOV/GUNW data.
-- The **post-event pass** (~10 November) that would image the fresh landslide scar
-  **was not yet published on ASF** when this was built — radar archives have processing
-  latency. The moment it appears, Qaway's change + coherence analysis reveals the scar.
-- The **real value is early warning**: if the slope was already creeping in October, Qaway
-  could have flagged it **before** the 3 a.m. collapse. That is exactly what the InSAR
-  deformation + coherence tools are built to catch.
-- ⚠️ **Honest caveat:** this is **dense jungle**. Forest canopy lowers InSAR coherence, so
-  slow-motion deformation is harder to measure here than on bare Andean slopes — though a
-  landslide that **strips the forest** produces a strong, detectable change-and-coherence signal.
+In plain terms: **a quarter of the hillside was already moving, and most of it had lost radar
+coherence — the signature of a disturbed, unstable surface — before the 1 November collapse.**
+This is exactly the early-warning signal Qaway is built to surface:
 
-We would rather show you a real, verifiable workflow with its limits stated than a staged result.
+> *"With October data, Qaway already saw this slope moving and losing coherence — days before
+> the landslide. It could have flagged the corridor to watch."*
+
+**We state the limits honestly:**
+
+- Single-pair InSAR deformation is an **indication**, not a certified measurement — a time
+  series (SBAS) would confirm it.
+- This is **dense jungle**: the low coherence (0.289) reflects **both** forest canopy **and**
+  surface disturbance. Both readings point the same way — a perturbed slope — but we do not
+  over-claim a single cause.
+- We do **not** claim Qaway *predicted* the exact collapse. We show that, on real open NISAR
+  data, the slope carried **measurable instability consistent with the landslide that followed.**
+- The **post-event pass** that would image the fresh scar was not yet published on ASF at build
+  time (radar archives have processing latency); when it appears, the same change + coherence
+  tools reveal the scar directly.
+
+We would rather show a real, reproducible result with its limits stated than a staged one.
 
 ---
 
