@@ -25,3 +25,6 @@ venv/
 
 # Documentación (no va al repo público)
 documentacion/
+
+# Notas internas de avance (no van al repo)
+AVANCE.md
