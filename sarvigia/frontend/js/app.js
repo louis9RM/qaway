@@ -73,6 +73,28 @@ const map = new maplibregl.Map({
   center:CFG.MAP_CENTER, zoom:CFG.MAP_ZOOM, attributionControl:true
 });
 
+// --- Pin "mi ubicación" (punto azul estilo Google Maps) ---
+let userMarker=null;
+function ponerPinUsuario(lat,lon,centrar){
+  const el=document.createElement('div');
+  el.style.cssText='width:16px;height:16px;border-radius:50%;background:#1a73e8;'
+    +'border:3px solid #fff;box-shadow:0 0 0 4px rgba(26,115,232,.35),0 1px 4px rgba(0,0,0,.4);';
+  if(userMarker) userMarker.remove();
+  userMarker=new maplibregl.Marker({element:el}).setLngLat([lon,lat]).addTo(map);
+  if(centrar) map.flyTo({center:[lon,lat], zoom:13, speed:1.2});
+}
+// Al entrar: pide GPS una vez y marca al usuario (como Google Maps). No analiza nada aún.
+function marcarMiUbicacionAuto(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos=>{ const la=pos.coords.latitude, lo=pos.coords.longitude;
+           guardarUbicacion(la,lo); ponerPinUsuario(la,lo,true);
+           toast('📍 You are here',2500); },
+    err=>{ /* permiso denegado o sin señal: se queda en el mapa por defecto */ },
+    {enableHighAccuracy:true, timeout:10000, maximumAge:60000}
+  );
+}
+
 function setBase(id){
   if(!BASES[id]) return; activeBase=id;
   for(const k of Object.keys(BASES)) map.setLayoutProperty('base_'+k,'visibility',k===id?'visible':'none');
@@ -279,20 +301,10 @@ function seguirJob(id){
   },2000);
 }
 
-// El agente narra por audio el resultado REAL del polígono analizado
-async function narrarAnalisis(stats){
-  const contexto={zona: state.aoi?state.aoi.name:'tu zona', bbox: state.aoi?state.aoi.bbox:null, stats_cambio: stats};
-  const pregunta = state.idioma==='en'
-    ? 'Give me the diagnosis of the area I just analyzed with NISAR.'
-    : 'Dame el diagnóstico de la zona que acabo de analizar con NISAR.';
-  try{
-    const res=await fetch(CFG.API_BASE+'/preguntar',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({pregunta, idioma:state.idioma, nivel:state.nivel, contexto})});
-    const d=await res.json();
-    const txt=d.respuesta||'';
-    speak(txt);
-    toast('Qaway analyzed your area ✔',3000);
-  }catch(e){ toast('Analysis ready, but I could not narrate it.',3500); }
+// MODO POLÍGONO (analista): NO voz → tablero estadístico riguroso en pantalla.
+function narrarAnalisis(stats){
+  try{ speechSynthesis.cancel(); }catch(e){}   // asegurar que no hable en modo analista
+  mostrarEstadisticas(stats);
 }
 
 // ---------- Tema / menú / util ----------
@@ -411,6 +423,7 @@ async function geocodeInverso(lat,lon){
 async function guardarUbicacion(lat,lon){
   const lugar=await geocodeInverso(lat,lon);
   state.ubicacion={lat:+(+lat).toFixed(5), lon:+(+lon).toFixed(5), lugar};
+  try{ ponerPinUsuario(lat,lon,false); }catch(e){}   // mantiene el pin en sync
   return state.ubicacion;
 }
 function capturarUbicacion(){
@@ -433,11 +446,48 @@ document.querySelectorAll('.qseg').forEach(seg=>{
 function voiceLang(){ return state.idioma==='en'?'en-US':'es-PE'; }
 
 // ---------- Agente Qaway: voz (reconocimiento + síntesis) ----------
+// Hora local del dispositivo → el agente la recibe en el contexto (es agentic: sabe la hora).
+function ctxTiempo(){
+  const d=new Date();
+  return { iso:d.toISOString(), hora:d.getHours(),
+           hhmm:d.toTimeString().slice(0,5), fecha:d.toISOString().slice(0,10) };
+}
+// Saludo de bienvenida (inglés) según el momento del día.
+function saludoIngles(){
+  const h=new Date().getHours();
+  const s = h<5?'Hello':h<12?'Good morning':h<19?'Good afternoon':'Good evening';
+  return `${s}! I'm Qaway, your road-safety assistant powered by NISAR satellite radar. `
+       + `Ask me about landslides, slope movement, or flooding on your route.`;
+}
+// El móvil bloquea el audio hasta un gesto del usuario (política de autoplay).
+// Por eso Qaway saluda por voz en el PRIMER toque/clic/tecla (y desbloquea la cola).
+function bienvenida(){
+  let started=false;
+  const eventos=['click','keydown'];   // 'click' = gesto válido para voz en iOS y Android
+  const intentar=()=>{
+    if(started) return;
+    try{
+      speechSynthesis.resume();
+      const u=new SpeechSynthesisUtterance(saludoIngles());
+      u.lang='en-US'; u.rate=1;
+      u.onstart=()=>{ started=true;
+        eventos.forEach(ev=>window.removeEventListener(ev, intentar, true)); };
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    }catch(e){}
+  };
+  // Captura = corre antes que los botones; reintenta en cada clic hasta que la voz arranque.
+  eventos.forEach(ev=>window.addEventListener(ev, intentar, {capture:true}));
+}
+// Tocar la llamita → repite el saludo (lo usa avatar.js).
+window.qawaySaludar=()=>{ try{ speak(saludoIngles(),'en-US'); }catch(e){} };
+
 function speak(text,lang){
   try{ if(!window.speechSynthesis||!text) return;
     // limpiar markdown para que la voz no lea "asterisco", "numeral", etc.
     const limpio=text.replace(/[*_#`>]+/g,'').replace(/^\s*[-•]\s*/gm,' ').replace(/\s{2,}/g,' ').trim();
     const u=new SpeechSynthesisUtterance(limpio); u.lang=lang||voiceLang(); u.rate=1;
+    u.onstart=()=>{ try{ window.LlamaAvatar&&window.LlamaAvatar.setTalking(true); }catch(e){} };
+    u.onend=u.onerror=()=>{ try{ window.LlamaAvatar&&window.LlamaAvatar.setTalking(false); }catch(e){} };
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   }catch(e){}
 }
@@ -462,7 +512,7 @@ async function preguntarAgente(pregunta){
   // pregunta → el LLM decide si la usa; no dependemos de frases fijas.
   if(!state.ubicacion){ await capturarUbicacion(); }
   toast('🧠 Qaway is thinking…',2500); mic.textContent='Thinking…';
-  const contexto={};
+  const contexto={ tiempo: ctxTiempo() };
   if(state.aoi){ contexto.zona=state.aoi.name; contexto.bbox=state.aoi.bbox; }
   if(state.ubicacion) contexto.ubicacion=state.ubicacion;
   try{
@@ -486,6 +536,94 @@ document.getElementById('micBtn').onclick=startVoice;
 document.getElementById('askBtn').onclick=()=>{ const t=document.getElementById('askText').value.trim(); if(t) preguntarAgente(t); };
 document.getElementById('askText').addEventListener('keydown',e=>{ if(e.key==='Enter'){ const t=e.target.value.trim(); if(t) preguntarAgente(t); }});
 
+// ---------- Tablero del ANALISTA (modo polígono): estadística rigurosa ----------
+let spCharts=[];
+const SP_FONT='Inter, system-ui, sans-serif';
+function spFmt(n,d){ d=(d==null?2:d); return (n==null||isNaN(+n))?'—':(+n).toFixed(d); }
+function mostrarEstadisticas(stats){
+  const panel=document.getElementById('stats-panel'); if(!panel||!stats) return;
+  spCharts.forEach(c=>{try{c.destroy()}catch(e){}}); spCharts=[];
+
+  const zona=(state.aoi&&state.aoi.name)||'the selected area';
+  const pol=(stats.polarizaciones||['HH','HV']).join(' + ');
+  document.getElementById('sp-sub').textContent =
+    zona+' · NISAR L-band · pol '+pol+' · α='+(stats.alpha!=null?stats.alpha:'—');
+
+  const pct=+stats.pct_cambio||0;
+  const def=stats.deformacion&&!stats.deformacion.error?stats.deformacion:null;
+  const coh=stats.coherencia&&!stats.coherencia.error?stats.coherencia:null;
+  const inu=stats.inundacion&&!stats.inundacion.error?stats.inundacion:null;
+
+  // veredicto de riesgo (de los números, no del LLM)
+  let score = pct>=2?3 : pct>=0.5?2 : 1;
+  if(def){ const s=def.severidad_deformacion; if(s==='alta')score=Math.max(score,3); else if(s==='media')score=Math.max(score,2); }
+  if(inu && (+inu.pct_zona_inundada>2)) score=Math.max(score,3);
+  const V=[null,
+    {t:'LOW hazard — surface appears stable',c:'#2fbf71'},
+    {t:'MODERATE hazard — monitor this corridor',c:'#f2b134'},
+    {t:'HIGH hazard — significant change detected',c:'#ef4a52'}][score];
+  const vd=document.getElementById('sp-verdict');
+  vd.style.background=V.c+'22'; vd.style.border='1px solid '+V.c+'55';
+  vd.innerHTML='<span class="dot" style="background:'+V.c+'"></span><span>'+V.t+'</span>';
+
+  const tiles=[
+    ['Changed area', spFmt(stats.area_cambio_km2,3)+' km²'],
+    ['% of area changed', spFmt(pct,2)+' %'],
+    ['Max deformation', def? spFmt(def.desplazamiento_max_mm,1)+' mm':'—'],
+    ['Mean coherence', coh? spFmt(coh.coherencia_media,3):'—'],
+  ];
+  document.getElementById('sp-tiles').innerHTML=tiles.map(t=>
+    '<div class="sp-tile"><div class="v">'+t[1]+'</div><div class="l">'+t[0]+'</div></div>').join('');
+
+  Chart.defaults.color='#8aa0c0'; Chart.defaults.font.family=SP_FONT;
+  const grid={color:'rgba(255,255,255,.07)'};
+  const barOpts=t=>({responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false}},y:{grid:grid,beginAtZero:true,title:{display:true,text:t}}}});
+
+  spCharts.push(new Chart(document.getElementById('sp-change'),{type:'bar',
+    data:{labels:['Increase','Decrease'],datasets:[{data:[+stats.aumento_km2||0,+stats.disminucion_km2||0],
+      backgroundColor:['#f2b134','#2a7af0'],borderRadius:4,barThickness:46}]},options:barOpts('km²')}));
+
+  const fc=document.getElementById('sp-flood');
+  if(inu){ fc.parentElement.style.opacity=1;
+    spCharts.push(new Chart(fc,{type:'bar',
+      data:{labels:['Water A','Water B','New water'],
+        datasets:[{data:[+inu.agua_fecha_A_km2||0,+inu.agua_fecha_B_km2||0,+inu.agua_nueva_km2||0],
+        backgroundColor:['#3a5a78','#2a7af0','#19c3ff'],borderRadius:4,barThickness:40}]},options:barOpts('km²')}));
+  } else { const box=fc.closest('.sp-chart'); if(box) box.style.opacity=.5; }
+
+  const dm=def?+def.desplazamiento_max_mm:0, dpc=Math.min(100,dm/40*100);
+  const dcol=dm>30?'#ef4a52':dm>10?'#f2b134':'#2fbf71';
+  document.getElementById('sp-deform').innerHTML = def
+   ? '<div class="sp-gval">'+spFmt(dm,1)+' mm <span style="font-size:13px;color:var(--muted)">('+spFmt(def.tasa_mm_por_semana,1)+' mm/week)</span></div>'
+     +'<div class="sp-gauge"><i style="width:'+dpc+'%;background:'+dcol+'"></i>'
+     +'<span class="mark" style="left:25%"></span><span class="mark" style="left:75%"></span></div>'
+     +'<div class="sp-gnote">'+def.tipo+' · '+def.severidad_deformacion+' severity · thresholds 10 / 30 mm</div>'
+   : '<div class="sp-gnote">No InSAR deformation for this area.</div>';
+
+  const cvv=coh?+coh.coherencia_media:0;
+  document.getElementById('sp-coh').innerHTML = coh
+   ? '<div class="sp-gval">'+spFmt(cvv,3)+' <span style="font-size:13px;color:var(--muted)">/ 1.0</span></div>'
+     +'<div class="sp-gauge"><i style="width:'+(cvv*100)+'%;background:linear-gradient(90deg,#1a2a20,#2fbf71)"></i></div>'
+     +'<div class="sp-gnote">High = stable surface · Low = disturbed (possible landslide)</div>'
+   : '<div class="sp-gnote">No coherence data for this area.</div>';
+
+  document.getElementById('sp-foot').innerHTML=
+    '<b>Methods:</b> '+(stats.metodo||'ASF log-ratio + Wishart/Conradsen')+' · '
+    +(inu?inu.metodo:'ARSET Otsu flood mapping')+' · InSAR GUNW deformation &amp; coherence.<br>'
+    +'<b>Data:</b> NISAR GCOV/GUNW (ASF) · significance α='+(stats.alpha!=null?stats.alpha:'—')+' · polarizations '+pol+'.';
+
+  panel.classList.add('show'); panel.setAttribute('aria-hidden','false');
+}
+(function(){ const c=document.getElementById('sp-close'), p=document.getElementById('stats-panel');
+  const cerrar=()=>{ p.classList.remove('show'); p.setAttribute('aria-hidden','true'); };
+  if(c) c.onclick=cerrar;
+  if(p) p.addEventListener('click',e=>{ if(e.target===p) cerrar(); });
+})();
+
 // ---------- init ----------
 resetReadout();
+bienvenida();   // Qaway se presenta por voz en el primer toque (según la hora)
+map.on('load', marcarMiUbicacionAuto);   // marca al usuario con su GPS al entrar
 })();

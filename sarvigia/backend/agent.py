@@ -12,6 +12,7 @@ compone la respuesta razonando sobre datos REALES.
 """
 from __future__ import annotations
 
+import datetime
 import json
 import os
 import pathlib
@@ -69,6 +70,18 @@ TOOLS = [
                 "properties": {"km": {"type": "number", "description": "radio en km (opcional)"}},
                 "required": [],
             },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "obtener_hora",
+            "description": (
+                "Devuelve la fecha y hora local actual del usuario y el momento del día "
+                "(madrugada / mañana / tarde / noche). Úsalo cuando pregunten la hora, la "
+                "fecha, qué día es hoy, o para saludar según el momento del día."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
         },
     },
     {
@@ -145,6 +158,8 @@ def _run_tool(name: str, args: dict, contexto: dict | None) -> dict:
         return _tool_fusion(contexto)
     if name == "medir_deformacion":
         return _tool_deformacion(contexto)
+    if name == "obtener_hora":
+        return _tool_hora(contexto)
     if name == "obtener_ubicacion":
         return _tool_ubicacion(contexto)
     if name == "detectar_inundacion":
@@ -162,6 +177,38 @@ def _tool_inundacion(contexto: dict | None) -> dict:
     d = json.load(open(p))
     d["zona"] = (contexto or {}).get("zona", "la zona seleccionada")
     return d
+
+
+def _parte_del_dia(h: int) -> tuple[str, str]:
+    """Devuelve (es, en) del momento del día según la hora 0-23."""
+    if h < 5:
+        return ("madrugada", "night")
+    if h < 12:
+        return ("mañana", "morning")
+    if h < 19:
+        return ("tarde", "afternoon")
+    return ("noche", "evening")
+
+
+def _tool_hora(contexto: dict | None) -> dict:
+    """Fecha/hora local del usuario y momento del día.
+    Usa el reloj del dispositivo (el frontend lo pasa en contexto['tiempo']);
+    si no está, cae al reloj del servidor."""
+    t = (contexto or {}).get("tiempo") or {}
+    hora = t.get("hora")
+    if hora is None:
+        now = datetime.datetime.now()
+        hora = now.hour
+        fecha = now.strftime("%Y-%m-%d")
+        hhmm = now.strftime("%H:%M")
+        fuente = "reloj del servidor"
+    else:
+        fecha = t.get("fecha") or ""
+        hhmm = t.get("hhmm") or f"{int(hora):02d}:00"
+        fuente = "reloj del dispositivo"
+    es, en = _parte_del_dia(int(hora))
+    return {"fecha": fecha, "hora_local": hhmm,
+            "parte_del_dia_es": es, "parte_del_dia_en": en, "fuente": fuente}
 
 
 def _tool_ubicacion(contexto: dict | None) -> dict:
@@ -419,6 +466,17 @@ def _chat_gemini(messages: list[dict], tools=None, timeout: float = 45.0) -> dic
 def responder(pregunta: str, idioma: str = "es", nivel: str = "sencillo",
               contexto: dict | None = None, max_steps: int = 3) -> dict:
     system = _system_prompt(idioma, nivel)
+
+    # El agente SIEMPRE conoce la hora local (no tiene que preguntarla).
+    t = (contexto or {}).get("tiempo")
+    if isinstance(t, dict) and t.get("hora") is not None:
+        try:
+            es, en = _parte_del_dia(int(t["hora"]))
+            parte = en if idioma == "en" else es
+            etq = "Current local date/time" if idioma == "en" else "Fecha/hora local actual"
+            system += f"\n{etq}: {t.get('fecha','')} {t.get('hhmm','')} ({parte})."
+        except (TypeError, ValueError):
+            pass
 
     # Narración DIRECTA (sin loop de herramientas) cuando el frontend ya pasó los datos
     # del polígono analizado → respuesta determinista y fiable.

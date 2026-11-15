@@ -67,6 +67,7 @@
   <!-- MAP -->
   <div class="map">
     <div id="map"></div>
+    <div id="llama-avatar" title="Qaway" style="position:absolute;left:0;right:0;bottom:22px;height:120px;z-index:30;pointer-events:none;"></div>
     <div class="basemaps" id="basemaps"></div>
     <div class="joboverlay" id="joboverlay">
       <div class="jobcard">
@@ -86,9 +87,63 @@
   <div class="scrim" id="scrim"></div>
 </div>
 
+<!-- Tablero del ANALISTA (modo polígono): estadística rigurosa, sin voz -->
+<style>
+#stats-panel{position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;
+  background:rgba(4,8,16,.72);overflow-y:auto;padding:24px 14px}
+#stats-panel.show{display:flex}
+.sp-card{background:var(--panel,#0d1623);border:1px solid var(--line,#20304a);border-radius:16px;
+  width:min(920px,100%);padding:20px 20px 24px;box-shadow:0 20px 60px rgba(0,0,0,.5);color:var(--ink,#e7eefc)}
+.sp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sp-head h2{margin:0;font-size:19px;font-family:var(--head,inherit)}
+.sp-sub{color:var(--muted,#8aa0c0);font-size:12.5px;margin-top:4px}
+#sp-close{background:transparent;border:1px solid var(--line,#20304a);color:var(--ink,#e7eefc);
+  width:34px;height:34px;border-radius:9px;font-size:18px;cursor:pointer;flex:none}
+.sp-verdict{margin:14px 0;padding:12px 14px;border-radius:12px;font-weight:600;display:flex;gap:10px;align-items:center}
+.sp-verdict .dot{width:12px;height:12px;border-radius:50%}
+.sp-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0 4px}
+.sp-tile{background:rgba(255,255,255,.035);border:1px solid var(--line,#20304a);border-radius:11px;padding:11px 12px}
+.sp-tile .v{font-size:21px;font-weight:700;font-family:var(--mono,monospace)}
+.sp-tile .l{font-size:11px;color:var(--muted,#8aa0c0);margin-top:3px;line-height:1.25}
+.sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.sp-chart{background:rgba(255,255,255,.025);border:1px solid var(--line,#20304a);border-radius:12px;padding:12px}
+.sp-chart h3{margin:0 0 8px;font-size:13px;color:var(--muted,#8aa0c0);font-weight:600}
+.sp-cwrap{position:relative;height:190px}
+.sp-gauge{height:14px;border-radius:8px;background:rgba(255,255,255,.07);position:relative;overflow:hidden;margin:16px 0 6px}
+.sp-gauge>i{position:absolute;inset:0 auto 0 0;border-radius:8px}
+.sp-gauge .mark{position:absolute;top:-4px;width:2px;height:22px;background:var(--muted,#8aa0c0);opacity:.5}
+.sp-gnote{font-size:12px;color:var(--muted,#8aa0c0)}
+.sp-gval{font-size:24px;font-weight:700;font-family:var(--mono,monospace)}
+.sp-foot{margin-top:16px;font-size:11.5px;color:var(--muted,#8aa0c0);line-height:1.5;border-top:1px solid var(--line,#20304a);padding-top:12px}
+@media(max-width:640px){.sp-tiles{grid-template-columns:repeat(2,1fr)}.sp-grid{grid-template-columns:1fr}}
+</style>
+<div id="stats-panel" aria-hidden="true" role="dialog" aria-label="NISAR analyst report">
+  <div class="sp-card">
+    <div class="sp-head">
+      <div><h2>NISAR Analysis — Analyst Report</h2><div class="sp-sub" id="sp-sub"></div></div>
+      <button id="sp-close" aria-label="Close">×</button>
+    </div>
+    <div class="sp-verdict" id="sp-verdict"></div>
+    <div class="sp-tiles" id="sp-tiles"></div>
+    <div class="sp-grid">
+      <div class="sp-chart"><h3>Surface change — backscatter (km²)</h3><div class="sp-cwrap"><canvas id="sp-change"></canvas></div></div>
+      <div class="sp-chart"><h3>River flooding — water extent (km²)</h3><div class="sp-cwrap"><canvas id="sp-flood"></canvas></div></div>
+    </div>
+    <div class="sp-grid">
+      <div class="sp-chart"><h3>Ground deformation (InSAR)</h3><div id="sp-deform"></div></div>
+      <div class="sp-chart"><h3>Radar coherence (GUNW)</h3><div id="sp-coh"></div></div>
+    </div>
+    <div class="sp-foot" id="sp-foot"></div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="js/config.js?v=30"></script>
-<script src="js/app.js?v=30"></script>
+<script src="js/app.js?v=39"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="js/avatar.js?v=6"></script>
 </body>
 </html>
