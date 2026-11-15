@@ -68,8 +68,10 @@ a rigorous statistical report for the analyst — two faces of the same engine.
 Andean llama mascot — wearing a red-and-white Peruvian blanket — that walks across the map
 while it watches the road for you.
 
-![Qaway, the walking llama mascot, on the map over Huánuco](docs/img/qaway-map-llama.png)
-<sub>Qaway's mascot walks the map; the app is centered on the user's GPS location.</sub>
+![Qaway, the walking llama mascot, on the map over the Santa Rosa corridor of the PE-5N highway](docs/img/qaway-map-llama.png)
+<sub>Qaway over the **Federico Basadre highway (PE-5N)** at Santa Rosa, Padre Abad — the exact
+jungle corridor of the 1 November slide. The mascot walks the map; the app centers on the
+user's GPS, or on the road corridor being watched.</sub>
 
 It detects **three life-threatening surface changes** along a road corridor, all from NISAR:
 
