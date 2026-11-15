@@ -22,3 +22,6 @@ venv/
 # === SO / editor ===
 .DS_Store
 *.swp
+
+# Documentación (no va al repo público)
+documentacion/
