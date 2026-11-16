@@ -601,26 +601,30 @@ document.getElementById('askText').addEventListener('keydown',e=>{ if(e.key==='E
 // ---------- Botones flotantes: arrastrables con el dedo + abrir su hoja ----------
 (function(){
   const fabs=document.querySelector('.fabs'); if(!fabs) return;
-  let down=false, moved=false, sx=0, sy=0, ox=0, oy=0;
+  let down=false, moved=false, dragging=false, sx=0, sy=0, ox=0, oy=0, pid=null;
   fabs.style.touchAction='none';
   fabs.addEventListener('pointerdown',e=>{
-    down=true; moved=false; sx=e.clientX; sy=e.clientY;
-    const r=fabs.getBoundingClientRect(); ox=r.left; oy=r.top;
-    fabs.style.transform='none'; fabs.style.left=ox+'px'; fabs.style.top=oy+'px'; fabs.style.bottom='auto';
-    try{ fabs.setPointerCapture(e.pointerId); }catch(_){}
+    down=true; moved=false; dragging=false; sx=e.clientX; sy=e.clientY; pid=e.pointerId;
+    const r=fabs.getBoundingClientRect(); ox=r.left; oy=r.top;   // NO capturamos aún → el clic normal funciona
   });
   fabs.addEventListener('pointermove',e=>{
     if(!down) return; const dx=e.clientX-sx, dy=e.clientY-sy;
-    if(Math.abs(dx)+Math.abs(dy)>6) moved=true;
-    let nx=Math.max(6,Math.min(window.innerWidth -fabs.offsetWidth -6, ox+dx));
-    let ny=Math.max(60,Math.min(window.innerHeight-fabs.offsetHeight-6, oy+dy));
-    fabs.style.left=nx+'px'; fabs.style.top=ny+'px';
+    if(!dragging && Math.abs(dx)+Math.abs(dy)>8){   // recién aquí empieza el arrastre real
+      dragging=true; moved=true;
+      try{ fabs.setPointerCapture(pid); }catch(_){}
+      fabs.style.transform='none'; fabs.style.bottom='auto';
+    }
+    if(dragging){
+      const nx=Math.max(6,Math.min(window.innerWidth -fabs.offsetWidth -6, ox+dx));
+      const ny=Math.max(60,Math.min(window.innerHeight-fabs.offsetHeight-6, oy+dy));
+      fabs.style.left=nx+'px'; fabs.style.top=ny+'px';
+    }
   });
-  fabs.addEventListener('pointerup',()=>{ down=false; });
-  // si fue arrastre, cancelar el click para no abrir la hoja
-  fabs.addEventListener('click',e=>{ if(moved){ e.stopPropagation(); e.preventDefault(); moved=false; } }, true);
-  // abrir hoja al tocar (no arrastrar)
-  document.querySelectorAll('.fab').forEach(f=>f.addEventListener('click',()=>{ if(!moved && window.__openSheet) window.__openSheet(f.dataset.open); }));
+  fabs.addEventListener('pointerup',()=>{ down=false; dragging=false; });
+  fabs.addEventListener('pointercancel',()=>{ down=false; dragging=false; });
+  // si fue arrastre, cancela el clic (no abre la hoja); si fue clic normal, deja pasar
+  fabs.addEventListener('click',e=>{ if(moved){ e.stopPropagation(); e.preventDefault(); } moved=false; }, true);
+  document.querySelectorAll('.fab').forEach(f=>f.addEventListener('click',()=>{ if(window.__openSheet) window.__openSheet(f.dataset.open); }));
 })();
 
 // ---------- Tablero del ANALISTA (modo polígono): estadística rigurosa ----------
