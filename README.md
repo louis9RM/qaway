@@ -7,6 +7,13 @@ Team **thecreator** — Lino Ever Ramos Maíz · Silvana Rossío Pacheco Malpart
 
 🔗 **Live demo:** https://qaway.thecreatorcampus.ai  ·  💻 **Code:** this repository
 
+> 📱 **Best experienced on a mobile phone.** Qaway is built for the driver on the road, so the
+> full experience — live **GPS location** and **hands-free voice** — needs a phone. Open the demo
+> link on your mobile for the real thing. *(A desktop version with a classic sidebar also works,
+> using the map center as your location since computers usually have no GPS.)*
+> ⏱️ Note: analyzing a **new area** downloads real NISAR scenes from NASA (a few minutes); the
+> pre-cached **Huánuco** area responds instantly.
+
 ---
 
 ![Landslide on the Federico Basadre highway, Santa Rosa (Padre Abad, Ucayali), 1 November 2026](docs/img/landslide-provias-1.jpg)
