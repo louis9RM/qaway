@@ -586,16 +586,22 @@ document.getElementById('askText').addEventListener('keydown',e=>{ if(e.key==='E
 (function(){
   const side=document.getElementById('side'), bd=document.getElementById('sheetBackdrop');
   const pv=document.getElementById('panelVoz'), pa=document.getElementById('panelAnalista');
-  function openSheet(tab){
+  function setPanel(tab){
     if(pv) pv.style.display = tab==='voz' ? '' : 'none';
     if(pa) pa.style.display = tab==='analista' ? '' : 'none';
-    if(side) side.classList.add('sheet-open'); if(bd) bd.classList.add('on');
+    document.querySelectorAll('.qtab').forEach(t=>t.classList.toggle('on', t.dataset.tab===tab));
+  }
+  function isMobile(){ try{ return window.matchMedia('(max-width:820px)').matches; }catch(_){ return window.innerWidth<=820; } }
+  function openSheet(tab){                 // móvil: abre la hoja · desktop: solo cambia el panel del sidebar
+    setPanel(tab);
+    if(isMobile()){ if(side) side.classList.add('sheet-open'); if(bd) bd.classList.add('on'); }
   }
   function closeSheet(){ if(side) side.classList.remove('sheet-open'); if(bd) bd.classList.remove('on'); }
-  window.__openSheet=openSheet;
+  window.__openSheet=openSheet; window.closeQawaySheet=closeSheet;
   if(bd) bd.onclick=closeSheet;
   const h=document.getElementById('sheetHandle'); if(h) h.onclick=closeSheet;
-  window.closeQawaySheet=closeSheet;
+  // pestañas del sidebar (desktop) cambian de panel
+  document.querySelectorAll('.qtab').forEach(t=>t.onclick=()=>setPanel(t.dataset.tab));
 })();
 
 // ---------- Botones flotantes: arrastrables con el dedo + abrir su hoja ----------
