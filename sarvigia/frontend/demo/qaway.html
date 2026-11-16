@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Qaway — NASA Space Apps 2026</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root{--navy:#070d18;--navy2:#0d1930;--ink:#eaf1ff;--muted:#9fb3d4;--accent:#3a8dff;--amber:#f2b134;--red:#d91023}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#02060e;font-family:Inter,system-ui,sans-serif;color:var(--ink);overflow:hidden}
+  .slide{position:relative;width:1280px;height:720px;overflow:hidden;margin:0 auto;display:none;
+    background:radial-gradient(1200px 700px at 78% 18%,#15305c 0%,var(--navy2) 42%,var(--navy) 100%)}
+  .slide.active{display:block}
+  #nav{position:fixed;left:0;right:0;bottom:16px;display:flex;gap:16px;align-items:center;justify-content:center;z-index:99}
+  #nav button{width:40px;height:40px;border-radius:50%;border:1px solid #3a5f8f;background:#122744cc;color:#eaf1ff;
+    font-size:20px;cursor:pointer;display:grid;place-items:center}
+  #nav button:hover{background:#1b396a}
+  #dots{display:flex;gap:7px}
+  #dots i{width:9px;height:9px;border-radius:50%;background:#3a5f8f;cursor:pointer;transition:.2s}
+  #dots i.on{background:#3a8dff;width:22px;border-radius:5px}
+  .wv{display:flex;align-items:center;gap:3px;height:26px}
+  .wv i{width:3px;border-radius:2px;background:currentColor;opacity:.8}
+  .vplay{width:30px;height:30px;border-radius:50%;background:#ffffff26;display:grid;place-items:center;font-size:12px;flex:none}
+  /* diagrama de arquitectura nativo */
+  .arch{flex:1;display:flex;align-items:center;justify-content:center;gap:12px}
+  .arch .nd{background:#0e1c33;border:1px solid #2a4064;border-radius:14px;padding:16px 14px;text-align:center;width:132px}
+  .arch .nd .ic{font-size:26px;line-height:1}
+  .arch .nd .ti{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin-top:7px;color:#eaf1ff}
+  .arch .nd .sb{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8aa6cf;margin-top:5px;line-height:1.4}
+  .arch .arr{color:#3a8dff;font-size:24px;flex:none;opacity:.8}
+  .arch .stack{display:flex;flex-direction:column;gap:9px}
+  .arch .row{display:flex;align-items:center;gap:11px;background:#0e1c33;border:1px solid #2a4064;border-left-width:4px;border-radius:11px;padding:9px 13px;width:236px}
+  .arch .row .ic{font-size:19px;flex:none}
+  .arch .row .tx{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;color:#eaf1ff}
+  .arch .row .mt{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8aa6cf;margin-top:2px}
+  /* starfield / radar motif */
+  .stars{position:absolute;inset:0;opacity:.5;
+    background-image:radial-gradient(1.5px 1.5px at 20% 30%,#fff6,transparent),
+      radial-gradient(1.5px 1.5px at 70% 20%,#fff5,transparent),
+      radial-gradient(1px 1px at 40% 70%,#fff4,transparent),
+      radial-gradient(1px 1px at 85% 60%,#fff5,transparent),
+      radial-gradient(1.5px 1.5px at 60% 85%,#fff4,transparent)}
+  .rings{position:absolute;right:-180px;top:-180px;width:720px;height:720px;border-radius:50%;
+    border:1px solid #3a8dff22;box-shadow:0 0 0 90px #3a8dff0d,0 0 0 180px #3a8dff08}
+  .scene{position:absolute;inset:0;width:100%;height:100%}
+  .wrap{position:absolute;inset:0;display:grid;grid-template-columns:1.05fr .95fr;align-items:center;padding:0 64px}
+  .eyebrow{display:inline-flex;gap:10px;align-items:center;font-family:IBM Plex Mono,monospace;
+    font-size:14px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase;margin-bottom:22px}
+  .eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+  h1{font-family:Space Grotesk,sans-serif;font-weight:700;font-size:120px;line-height:.92;letter-spacing:-.02em}
+  h1 .q{color:#6fb0ff}
+  @media print{ h1 .q{color:#6fb0ff !important;-webkit-text-fill-color:#6fb0ff !important} }
+  .quechua{font-family:Space Grotesk;font-size:26px;color:var(--muted);margin:14px 0 26px;font-weight:500}
+  .quechua b{color:var(--ink)}
+  .tag{font-size:21px;line-height:1.5;color:#d6e2f7;max-width:560px}
+  .tag b{color:var(--amber)}
+  .foot{position:absolute;left:64px;bottom:40px;display:flex;gap:10px;flex-wrap:wrap}
+  .chip{font-family:IBM Plex Mono,monospace;font-size:13px;color:#cdddf5;
+    border:1px solid #3a5f8f;border-radius:999px;padding:8px 14px;background:#122744cc}
+  .chip b{color:#fff}
+  #mascot{position:absolute;inset:0;pointer-events:none}
+  .plate{position:absolute;right:64px;bottom:40px;text-align:right;font-family:IBM Plex Mono,monospace;
+    font-size:13px;color:var(--muted)}
+  .plate b{color:var(--amber)}
+  /* ===== Impresión / PDF: 7 láminas = 7 páginas 16:9 ===== */
+  @media print{
+    @page{size:1280px 720px;margin:0}
+    html,body{background:#02060e}
+    #nav{display:none !important}
+    .slide{display:block !important;page-break-after:always;break-after:page;margin:0}
+    .slide:last-of-type{page-break-after:auto;break-after:auto}
+  }
+</style></head>
+<body>
+<section class="slide active" id="s1">
+  <div class="stars"></div><div class="rings"></div>
+  <svg class="scene" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMax slice">
+    <!-- cordillera lejana -->
+    <path d="M0,360 L130,305 L250,348 L370,290 L500,342 L640,292 L780,340 L920,288 L1060,335 L1190,296 L1280,328 L1280,720 L0,720 Z" fill="#1a3663" opacity=".55"/>
+    <!-- cordillera media -->
+    <path d="M0,470 L160,400 L310,452 L440,386 L580,446 L720,392 L860,452 L1000,398 L1140,452 L1280,410 L1280,720 L0,720 Z" fill="#102748" opacity=".85"/>
+    <!-- satélite NISAR + haces de radar hacia el derrumbe -->
+    <line x1="612" y1="138" x2="735" y2="492" stroke="#3a8dff" stroke-width="2" stroke-dasharray="2 9" opacity=".5"/>
+    <line x1="630" y1="138" x2="762" y2="500" stroke="#3a8dff" stroke-width="2" stroke-dasharray="2 9" opacity=".32"/>
+    <g transform="translate(615,116) rotate(-12)">
+      <rect x="-60" y="-10" width="36" height="20" rx="2" fill="#16305a" stroke="#4a79c0" stroke-width="1.2"/>
+      <line x1="-48" y1="-10" x2="-48" y2="10" stroke="#3a5f8f"/><line x1="-36" y1="-10" x2="-36" y2="10" stroke="#3a5f8f"/>
+      <rect x="24" y="-10" width="36" height="20" rx="2" fill="#16305a" stroke="#4a79c0" stroke-width="1.2"/>
+      <line x1="36" y1="-10" x2="36" y2="10" stroke="#3a5f8f"/><line x1="48" y1="-10" x2="48" y2="10" stroke="#3a5f8f"/>
+      <rect x="-15" y="-14" width="30" height="28" rx="5" fill="#2b4068" stroke="#7aa0de" stroke-width="1.5"/>
+      <line x1="0" y1="14" x2="0" y2="22" stroke="#cfe0ff" stroke-width="1.6"/>
+      <path d="M-8,26 A10 10 0 0 1 8,26 Z" fill="none" stroke="#cfe0ff" stroke-width="2"/>
+    </g>
+    <!-- río -->
+    <path d="M470,400 C520,470 455,545 520,602 C565,642 520,686 580,720" fill="none" stroke="#3f74ad" stroke-width="13" stroke-linecap="round" opacity=".5"/>
+    <path d="M470,400 C520,470 455,545 520,602 C565,642 520,686 580,720" fill="none" stroke="#7fb0e0" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+    <!-- carretera serpenteante (centro) -->
+    <path d="M655,420 C745,452 695,505 800,532 C885,554 845,598 955,618" fill="none" stroke="#cbb99a" stroke-width="9" stroke-linecap="round" opacity=".9"/>
+    <path d="M655,420 C745,452 695,505 800,532 C885,554 845,598 955,618" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-dasharray="3 11" stroke-linecap="round" opacity=".55"/>
+    <!-- DERRUMBE sobre la carretera (centro) -->
+    <g transform="translate(735,505)">
+      <path d="M-52,-26 C-24,-56 30,-52 50,-20 C66,6 44,34 8,38 C-30,42 -66,10 -52,-26 Z" fill="#6e4f33"/>
+      <path d="M-44,-14 C-20,-38 24,-36 38,-12 C50,6 34,26 6,28 C-24,30 -52,6 -44,-14 Z" fill="#8a6540" opacity=".92"/>
+      <polygon points="-22,-8 -8,-28 8,-6" fill="#5c4228"/>
+      <polygon points="12,-2 26,-22 36,4" fill="#5c4228"/>
+      <polygon points="-34,8 -20,-6 -8,12" fill="#4a351f"/>
+      <polygon points="-2,10 10,-2 20,14" fill="#4a351f"/>
+    </g>
+    <!-- señal de peligro -->
+    <g transform="translate(735,444)">
+      <polygon points="0,-22 19,11 -19,11" fill="#f2b134" stroke="#2a1c00" stroke-width="2.2"/>
+      <rect x="-1.8" y="-9" width="3.6" height="10" fill="#2a1c00"/><circle cx="0" cy="6" r="2" fill="#2a1c00"/>
+    </g>
+    <!-- terreno de primer plano (donde se para la llama) -->
+    <path d="M560,720 L650,606 C760,560 900,582 1030,562 C1150,546 1230,578 1280,556 L1280,720 Z" fill="#0a1626"/>
+    <path d="M560,720 L650,606 C760,560 900,582 1030,562 C1150,546 1230,578 1280,556" fill="none" stroke="#1d3558" stroke-width="2" opacity=".7"/>
+    <!-- CAMIÓN detenido antes del derrumbe (por esto existe Qaway) -->
+    <g transform="translate(852,560)">
+      <!-- cabina (a la izquierda, mirando al derrumbe) -->
+      <path d="M-30,-15 L-15,-15 L-15,-28 L-6,-28 L-6,-2 L-30,-2 L-30,-9 Z" fill="#20365a" stroke="#4a6ea0" stroke-width="1.4"/>
+      <rect x="-27" y="-12" width="9" height="7" rx="1" fill="#9fc0ea" opacity=".55"/>
+      <!-- furgón -->
+      <rect x="-6" y="-30" width="44" height="28" rx="2.5" fill="#1a2c49" stroke="#415f91" stroke-width="1.4"/>
+      <!-- faro -->
+      <circle cx="-31" cy="-8" r="2.6" fill="#ffd36b"/>
+      <ellipse cx="-40" cy="-8" rx="12" ry="4" fill="#ffd36b" opacity=".18"/>
+      <!-- ruedas -->
+      <circle cx="-22" cy="0" r="6.5" fill="#0b1422" stroke="#38527d" stroke-width="2"/>
+      <circle cx="12" cy="0" r="6.5" fill="#0b1422" stroke="#38527d" stroke-width="2"/>
+      <circle cx="28" cy="0" r="6.5" fill="#0b1422" stroke="#38527d" stroke-width="2"/>
+    </g>
+  </svg>
+  <canvas id="mascot"></canvas>
+  <div class="wrap">
+    <div>
+      <div class="eyebrow"><span class="dot"></span>NASA Space Apps 2026 · Dancing with the SARs</div>
+      <h1><span class="q">Qaway</span></h1>
+      <div class="quechua">“the one who watches” · <b>Quechua</b></div>
+      <div class="tag">Hi, I'm <b>Qaway</b> — an Andean <b>llamita</b> that watches Peru's most
+        dangerous roads from space, with <b>NISAR</b> radar, and warns you <b>before</b> the
+        mountain comes down.</div>
+      <div style="margin-top:26px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#8aa6cf;line-height:1.7">
+        Team <b style="color:#eaf1ff">thecreator</b> · Lino Ever Ramos Maíz · Silvana Rossío Pacheco Malpartida<br>
+        <span style="color:#6f87ad">NISAR (NASA–ISRO) · L-band SAR · Peru</span></div>
+    </div>
+    <div></div>
+  </div>
+</section>
+
+<!-- ===================== LÁMINA 2 — Esa madrugada ===================== -->
+<section class="slide" id="s2">
+  <div class="stars"></div>
+  <img src="img/qaway-mascot.png" alt="Qaway" style="position:absolute;left:955px;bottom:4px;height:168px;z-index:5;filter:drop-shadow(0 12px 22px #000a)">
+  <div style="position:absolute;inset:0;display:grid;grid-template-columns:1.12fr .88fr;align-items:center">
+    <div style="padding:56px 34px 56px 64px">
+      <div class="eyebrow"><span class="dot"></span>01 · The night it happened</div>
+      <div style="display:flex;align-items:center;gap:11px;margin:2px 0 20px">
+        <span style="width:36px;height:36px;border-radius:50%;background:#12264488;border:1px solid #3a5f8f;display:grid;place-items:center;font-size:19px">🦙</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#9fb3d4;letter-spacing:.12em">QAWAY · telling the story</span>
+      </div>
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:48px;line-height:1.04;margin-bottom:20px">
+        1 November 2026 — <span style="color:#f2b134">3 a.m.</span></h2>
+      <div style="font-size:20px;line-height:1.58;color:#d6e2f7;max-width:580px">
+        <p>Let me tell you about a night I can't forget.</p>
+        <p style="margin-top:13px">The mountain came down onto the <b style="color:#fff">Federico Basadre highway</b>,
+          at <b style="color:#fff">km 441+240</b>, deep in the jungle of Padre Abad.
+          <b style="color:#f2b134">140 meters of road, buried.</b> A cargo truck, trapped. Drivers
+          stranded in the dark since the night before.</p>
+        <p style="margin-top:13px">Nobody was watching that hillside — <b style="color:#fff">so nobody saw it coming.</b></p>
+        <p style="margin-top:16px;color:#8fc2ff;font-weight:600">That is why I exist: to watch these roads
+          from space, and warn the next truck <b>before</b> it is too late.</p>
+      </div>
+    </div>
+    <div style="position:relative;display:flex;align-items:center;justify-content:center;padding:36px 56px 36px 8px">
+      <figure style="margin:0;max-width:450px;border-radius:14px;overflow:hidden;border:1px solid #ffffff22;box-shadow:0 20px 55px #000a;transform:rotate(1.4deg)">
+        <img src="img/landslide-provias-1.jpg" style="width:100%;display:block">
+        <figcaption style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9fb3d4;padding:9px 12px;background:#0b1626;transform:rotate(0)">
+          Federico Basadre · Santa Rosa, Padre Abad. Photo: Provías Nacional / MTC — El Peruano, 1 Nov 2026</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== LÁMINA 3 — Conductor (voz) ===================== -->
+<section class="slide" id="s3">
+  <div class="stars"></div>
+  <img src="img/qaway-mascot.png" alt="Qaway" style="position:absolute;left:600px;top:300px;height:170px;z-index:6;filter:drop-shadow(0 12px 22px #000b)">
+  <div style="position:absolute;inset:0;display:grid;grid-template-columns:1.1fr .9fr;align-items:center">
+    <div style="padding:46px 28px 46px 64px">
+      <div class="eyebrow"><span class="dot"></span>02 · For the driver</div>
+      <div style="display:flex;align-items:center;gap:11px;margin:2px 0 14px">
+        <span style="width:36px;height:36px;border-radius:50%;background:#12264488;border:1px solid #3a5f8f;display:grid;place-items:center;font-size:18px">🚚</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#9fb3d4;letter-spacing:.12em">A TRUCK DRIVER · on the road</span>
+      </div>
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:40px;line-height:1.06;margin-bottom:18px">On the road, you just <span style="color:#f2b134">ask me</span>.</h2>
+      <p style="font-size:18px;color:#c3d4ee;line-height:1.55;max-width:460px">From the <b style="color:#fff">Qaway app on their phone</b> — mounted on the dashboard — a driver just talks, <b style="color:#fff">both hands on the wheel</b>, and Qaway replies out loud.</p>
+      <figure style="margin:22px 0 0;max-width:460px;border-radius:14px;overflow:hidden;border:1px solid #ffffff22;box-shadow:0 18px 45px #0009">
+        <img src="img/driver-phone.jpg" style="width:100%;display:block">
+        <figcaption style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9fb3d4;padding:8px 12px;background:#0b1626">Both hands on the wheel, phone on the mount. Photo: Peter Fazekas / Pexels</figcaption>
+      </figure>
+    </div>
+    <!-- Teléfono con la app Qaway (el chat vive AQUÍ) -->
+    <div style="display:flex;align-items:center;justify-content:center">
+      <div style="width:312px;height:600px;background:#060b14;border:11px solid #182235;border-radius:42px;box-shadow:0 30px 70px #000b;overflow:hidden;position:relative">
+        <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:116px;height:22px;background:#182235;border-radius:0 0 15px 15px;z-index:3"></div>
+        <div style="height:100%;background:linear-gradient(180deg,#0c1626,#0a111d);display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:10px;padding:26px 16px 13px;border-bottom:1px solid #1b2c47">
+            <span style="width:34px;height:34px;border-radius:50%;background:#12264488;border:1px solid #3a5f8f;display:grid;place-items:center;font-size:17px">🦙</span>
+            <div><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:#eaf1ff">Qaway</div><div style="font-size:10.5px;color:#2fbf71">● watching your route</div></div>
+          </div>
+          <div style="flex:1;padding:16px 13px;display:flex;flex-direction:column;gap:13px">
+            <div style="align-self:flex-end;max-width:86%;background:#1f4e86;border-radius:15px 15px 4px 15px;padding:10px 12px">
+              <div style="display:flex;align-items:center;gap:8px;color:#cfe0ff">
+                <span class="vplay" style="width:26px;height:26px;font-size:11px">▶</span>
+                <div class="wv" style="height:22px"><i style="height:40%"></i><i style="height:70%"></i><i style="height:90%"></i><i style="height:50%"></i><i style="height:75%"></i><i style="height:95%"></i><i style="height:55%"></i><i style="height:40%"></i><i style="height:80%"></i><i style="height:60%"></i><i style="height:35%"></i><i style="height:65%"></i></div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px">0:04</span>
+              </div>
+              <div style="margin-top:6px;font-size:13.5px;color:#eaf1ff;line-height:1.4">“Qaway, is the road to Pucallpa safe right now?”</div>
+            </div>
+            <div style="align-self:flex-start;max-width:90%;background:#0e1c33;border:1px solid #27406a;border-radius:15px 15px 15px 4px;padding:10px 12px">
+              <div style="display:flex;align-items:center;gap:8px;color:#f2b134">
+                <span class="vplay" style="width:26px;height:26px;font-size:11px">▶</span>
+                <div class="wv" style="height:22px"><i style="height:45%"></i><i style="height:75%"></i><i style="height:95%"></i><i style="height:55%"></i><i style="height:85%"></i><i style="height:45%"></i><i style="height:90%"></i><i style="height:60%"></i><i style="height:35%"></i><i style="height:80%"></i><i style="height:50%"></i><i style="height:70%"></i></div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#cfe0ff">0:06</span>
+              </div>
+              <div style="margin-top:6px;font-size:13.5px;color:#eaf1ff;line-height:1.45">“Careful — the hillside at <b style="color:#f2b134">km 441</b> is moving. <b>Slow down and stop before the curve.</b>”</div>
+            </div>
+          </div>
+          <div style="padding:13px;border-top:1px solid #1b2c47;display:flex;align-items:center;gap:10px">
+            <div style="flex:1;height:38px;border-radius:19px;background:#0e1c33;border:1px solid #27406a;display:flex;align-items:center;padding:0 14px;font-size:12.5px;color:#7f97bd">Hold to talk…</div>
+            <span style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3a8dff,#19c3ff);display:grid;place-items:center;font-size:19px;flex:none">🎙️</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== LÁMINA 4 — Investigador (polígono) ===================== -->
+<section class="slide" id="s4">
+  <div class="stars"></div>
+  <img src="img/qaway-mascot.png" alt="Qaway" style="position:absolute;left:16px;bottom:4px;height:104px;z-index:5;filter:drop-shadow(0 12px 22px #000a)">
+  <div style="position:absolute;inset:0;padding:38px 64px 30px;display:flex;flex-direction:column">
+    <div class="eyebrow"><span class="dot"></span>03 · For the analyst</div>
+    <div style="display:flex;align-items:center;gap:11px;margin:2px 0 8px">
+      <span style="width:34px;height:34px;border-radius:50%;background:#12264488;border:1px solid #3a5f8f;display:grid;place-items:center;font-size:17px">🔬</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#9fb3d4;letter-spacing:.12em">A RESEARCHER · studying the hillside</span>
+    </div>
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:34px;line-height:1.05;margin-bottom:4px">Draw a polygon. I show the <span style="color:#f2b134">proof</span>.</h2>
+    <p style="font-size:16px;color:#c3d4ee;margin-bottom:16px">No voice here — an engineer draws the exact area, and I answer with <b style="color:#fff">rigorous NISAR statistics</b>.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;flex:1;align-items:start">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#19c3ff;margin-bottom:8px">① Draw a polygon over the hillside</div>
+        <figure style="margin:0;border-radius:12px;overflow:hidden;border:1px solid #ffffff22;box-shadow:0 16px 40px #0009">
+          <img src="img/qaway-map-polygon.png" style="width:100%;display:block">
+        </figure>
+      </div>
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#f2b134;margin-bottom:8px">② Read the rigorous report</div>
+        <figure style="margin:0;border-radius:12px;overflow:hidden;border:1px solid #ffffff22;box-shadow:0 16px 40px #0009">
+          <img src="img/qaway-analyst-dashboard.png" style="width:100%;display:block">
+        </figure>
+      </div>
+    </div>
+    <div style="margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8aa6cf;text-align:center">Real NISAR analysis · Santa Rosa hillside (km 441+240) · October 2026</div>
+  </div>
+</section>
+
+<!-- ===================== LÁMINA 5 — Alerta temprana ===================== -->
+<section class="slide" id="s5">
+  <div class="stars"></div>
+  <img src="img/qaway-mascot.png" alt="Qaway" style="position:absolute;right:48px;bottom:4px;height:150px;z-index:5;filter:drop-shadow(0 12px 22px #000a)">
+  <div style="position:absolute;inset:0;padding:52px 64px;display:flex;flex-direction:column;justify-content:center">
+    <div class="eyebrow"><span class="dot"></span>04 · Early warning</div>
+    <div style="display:flex;align-items:center;gap:11px;margin:2px 0 12px">
+      <span style="width:36px;height:36px;border-radius:50%;background:#12264488;border:1px solid #3a5f8f;display:grid;place-items:center;font-size:19px">🦙</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#9fb3d4;letter-spacing:.12em">QAWAY · what I saw</span>
+    </div>
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;line-height:1.05;margin-bottom:6px">
+      I saw it moving — <span style="color:#f2b134">before it fell</span>.</h2>
+    <p style="font-size:18px;color:#c3d4ee;max-width:900px;margin-bottom:26px">Real NISAR data over the Santa Rosa hillside (km 441+240), in the two weeks <b style="color:#fff">before</b> the 1 November collapse.</p>
+    <!-- timeline -->
+    <div style="display:flex;align-items:center;gap:0;margin-bottom:30px;max-width:900px">
+      <div style="text-align:center"><div style="width:16px;height:16px;border-radius:50%;background:#3a8dff;margin:0 auto 8px"></div><div style="font-family:'IBM Plex Mono';font-size:13px;color:#cdddf5">17 Oct</div><div style="font-size:11px;color:#8aa6cf">NISAR pass</div></div>
+      <div style="flex:1;height:2px;background:#3a5f8f;margin:0 10px;margin-bottom:28px"></div>
+      <div style="text-align:center"><div style="width:16px;height:16px;border-radius:50%;background:#3a8dff;margin:0 auto 8px"></div><div style="font-family:'IBM Plex Mono';font-size:13px;color:#cdddf5">29 Oct</div><div style="font-size:11px;color:#8aa6cf">NISAR pass</div></div>
+      <div style="flex:1;height:2px;background:linear-gradient(90deg,#3a5f8f,#d91023);margin:0 10px;margin-bottom:28px"></div>
+      <div style="text-align:center"><div style="width:22px;height:22px;border-radius:50%;background:#d91023;margin:0 auto 6px;box-shadow:0 0 16px #d91023aa"></div><div style="font-family:'IBM Plex Mono';font-size:13px;color:#ff9aa0;font-weight:700">1 Nov · 3 a.m.</div><div style="font-size:11px;color:#ff9aa0">COLLAPSE</div></div>
+    </div>
+    <!-- stats -->
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,250px));gap:18px">
+      <div style="background:#0e1c33cc;border:1px solid #27406a;border-radius:14px;padding:20px 22px">
+        <div style="font-family:'IBM Plex Mono';font-size:34px;font-weight:700;color:#f2b134">22.5 mm</div>
+        <div style="font-size:14px;color:#c3d4ee;margin-top:4px">ground already moving (13.1 mm/week)</div></div>
+      <div style="background:#0e1c33cc;border:1px solid #27406a;border-radius:14px;padding:20px 22px">
+        <div style="font-family:'IBM Plex Mono';font-size:34px;font-weight:700;color:#f2b134">24.9 %</div>
+        <div style="font-size:14px;color:#c3d4ee;margin-top:4px">of the hillside moving &gt; 10 mm</div></div>
+      <div style="background:#0e1c33cc;border:1px solid #27406a;border-radius:14px;padding:20px 22px">
+        <div style="font-family:'IBM Plex Mono';font-size:34px;font-weight:700;color:#f2b134">0.289</div>
+        <div style="font-size:14px;color:#c3d4ee;margin-top:4px">radar coherence — low = disturbed</div></div>
+    </div>
+    <p style="margin-top:26px;font-size:20px;color:#8fc2ff;font-weight:600;max-width:820px">I don't just report disasters. I warn <b>before</b> them.</p>
+  </div>
+</section>
+
+<!-- ===================== LÁMINA 6 — Cómo funciono ===================== -->
+<section class="slide" id="s6">
+  <div class="stars"></div>
+  <div style="position:absolute;inset:0;padding:48px 64px;display:flex;flex-direction:column">
+    <div class="eyebrow"><span class="dot"></span>05 · How I work</div>
+    <div style="display:flex;align-items:center;gap:11px;margin:2px 0 10px">
+      <span style="width:36px;height:36px;border-radius:50%;background:#12264488;border:1px solid #3a5f8f;display:grid;place-items:center;font-size:19px">🦙</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#9fb3d4;letter-spacing:.12em">QAWAY · under the hood</span>
+    </div>
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:40px;line-height:1.05;margin-bottom:16px">From radar to a <span style="color:#f2b134">spoken warning</span>.</h2>
+    <div class="arch">
+      <div class="nd"><div class="ic">🎙️</div><div class="ti">Ask</div><div class="sb">voice · or draw a polygon</div></div>
+      <span class="arr">→</span>
+      <div class="nd"><div class="ic">🛰️</div><div class="ti">NISAR data</div><div class="sb">GCOV + GUNW<br>via ASF (NASA)</div></div>
+      <span class="arr">→</span>
+      <div class="stack">
+        <div class="row" style="border-left-color:#f2b134"><span class="ic">🏔️</span><div><div class="tx">Landslide change</div><div class="mt">Wishart · ASF/NASA</div></div></div>
+        <div class="row" style="border-left-color:#3a8dff"><span class="ic">📉</span><div><div class="tx">Deformation (mm)</div><div class="mt">InSAR · NISAR GUNW</div></div></div>
+        <div class="row" style="border-left-color:#19c3ff"><span class="ic">📡</span><div><div class="tx">Coherence</div><div class="mt">GUNW · 0–1</div></div></div>
+        <div class="row" style="border-left-color:#2fbf71"><span class="ic">🌊</span><div><div class="tx">Flooding</div><div class="mt">Otsu · NASA ARSET</div></div></div>
+      </div>
+      <span class="arr">→</span>
+      <div class="nd" style="border-color:#f2b13455;background:#1a1407"><div class="ic">🧭</div><div class="ti">Risk verdict</div><div class="sb">fused from<br>the numbers</div></div>
+      <span class="arr">→</span>
+      <div class="stack">
+        <div class="row" style="border-left-color:#8fc2ff;width:188px"><span class="ic">🗣️</span><div><div class="tx">Spoken answer</div><div class="mt">for the driver</div></div></div>
+        <div class="row" style="border-left-color:#8fc2ff;width:188px"><span class="ic">📊</span><div><div class="tx">Statistics report</div><div class="mt">for the analyst</div></div></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8aa6cf;line-height:1.7;text-align:center">
+      <b style="color:#cdddf5">NASA data:</b> NISAR GCOV/GUNW via ASF · method from NASA ARSET &nbsp;·&nbsp;
+      <b style="color:#cdddf5">Stack:</b> Python · FastAPI · MapLibre · Chart.js · Three.js · LLM agent (Qwen2.5 / Gemini) · Docker</div>
+  </div>
+</section>
+
+<!-- ===================== LÁMINA 7 — La vigilancia continúa ===================== -->
+<section class="slide" id="s7">
+  <div class="stars"></div>
+  <img src="img/qaway-mascot.png" alt="Qaway" style="position:absolute;right:54px;bottom:4px;height:168px;z-index:5;filter:drop-shadow(0 12px 22px #000a)">
+  <div style="position:absolute;inset:0;padding:50px 64px;display:flex;flex-direction:column;justify-content:center">
+    <div class="eyebrow"><span class="dot"></span>06 · The watch continues</div>
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;line-height:1.06;margin:8px 0 24px;max-width:900px">
+      I keep watching Peru's roads — so the warning <span style="color:#f2b134">always comes first</span>.</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px">
+      <div><div style="font-family:'Space Grotesk';font-size:18px;font-weight:700;color:#8fc2ff;margin-bottom:10px">Who I protect</div>
+        <div style="font-size:15.5px;color:#c3d4ee;line-height:1.7">Truck &amp; bus drivers<br>Rural Andean communities<br>Road authorities (MTC / Provías)</div></div>
+      <div><div style="font-family:'Space Grotesk';font-size:18px;font-weight:700;color:#f2b134;margin-bottom:10px">Honest about my limits</div>
+        <div style="font-size:15.5px;color:#c3d4ee;line-height:1.7">Single-pair InSAR = an indication, not a certified measurement<br>Jungle canopy lowers coherence<br>Needs internet today (offline-first is next)</div></div>
+      <div><div style="font-family:'Space Grotesk';font-size:18px;font-weight:700;color:#2fbf71;margin-bottom:10px">Open</div>
+        <div style="font-size:15.5px;color:#c3d4ee;line-height:1.7">Open source code<br>Open NASA data (NISAR / ASF)<br>Built to be reproduced</div></div>
+    </div>
+    <div style="margin-top:30px;display:flex;gap:12px;flex-wrap:wrap">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#cdddf5;border:1px solid #3a5f8f;border-radius:999px;padding:9px 16px;background:#122744cc">💻 github.com/louis9RM/qaway</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:#cdddf5;border:1px solid #3a5f8f;border-radius:999px;padding:9px 16px;background:#122744cc">🌐 qaway.thecreatorcampus.ai</span>
+    </div>
+  </div>
+</section>
+
+<div id="nav">
+  <button id="prev" aria-label="Previous">‹</button>
+  <span id="dots"></span>
+  <button id="next" aria-label="Next">›</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function(){
+  const host=document.getElementById('mascot'), slide=document.getElementById('s1');
+  const W=slide.clientWidth, H=slide.clientHeight;
+  const r=new THREE.WebGLRenderer({canvas:host,alpha:true,antialias:true});
+  r.setPixelRatio(2); r.setSize(W,H); if(r.outputEncoding!==undefined) r.outputEncoding=THREE.sRGBEncoding;
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(30,W/H,0.1,100); cam.position.set(0,1.0,6.2); cam.lookAt(0,0.35,0);
+  scene.add(new THREE.AmbientLight(0xffffff,0.9));
+  const k=new THREE.DirectionalLight(0xffffff,1.1); k.position.set(3,5,4); scene.add(k);
+  const rim=new THREE.DirectionalLight(0x6fa8ff,0.6); rim.position.set(-4,2,-3); scene.add(rim);
+  const g=new THREE.Group(); g.position.x=1.95; g.position.y=-1.0; scene.add(g);  // parada en el terreno, derecha
+  let mixer=null;
+  new THREE.GLTFLoader().load('/assets/alpaca.glb',(gltf)=>{
+    const m=gltf.scene;
+    const box=new THREE.Box3().setFromObject(m), sz=box.getSize(new THREE.Vector3()), c=box.getCenter(new THREE.Vector3());
+    const s=1.55/sz.y; m.scale.setScalar(s);
+    m.position.set(-c.x*s,-box.min.y*s,-c.z*s); m.rotation.y=-1.15;  // mira hacia la escena (izquierda)
+    g.add(m);
+    const red=new THREE.MeshStandardMaterial({color:0xd91023,roughness:.55});
+    const white=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.6});
+    const base=new THREE.Mesh(new THREE.BoxGeometry(sz.x*0.9,sz.y*0.05,sz.z*0.42),red);
+    const st=new THREE.Mesh(new THREE.BoxGeometry(sz.x*0.92,sz.y*0.055,sz.z*0.10),white);
+    const mn=new THREE.Group(); mn.add(base); mn.add(st); mn.position.set(c.x,c.y+sz.y*0.06,c.z); m.add(mn);
+    mixer=new THREE.AnimationMixer(m);
+    const clip=THREE.AnimationClip.findByName(gltf.animations,'Idle')||gltf.animations[0];
+    if(clip) mixer.clipAction(clip).play();
+    window.__ready=true;
+  });
+  let t0=performance.now();
+  (function loop(now){ const dt=(now-t0)/1000; if(mixer) mixer.update(1/60);
+    g.rotation.y=Math.sin(dt*0.3)*0.08; g.position.y=-1.0+Math.sin(dt*1.0)*0.015;
+    r.render(scene,cam); requestAnimationFrame(loop);})(t0);
+})();
+// Presentación: una lámina a la vez, flechas / clic / puntos.
+(function(){
+  const slides=[...document.querySelectorAll('.slide')];
+  const dots=document.getElementById('dots');
+  slides.forEach((s,k)=>{ const d=document.createElement('i'); d.onclick=()=>show(k); dots.appendChild(d); });
+  let i=0;
+  function show(n){ i=(n+slides.length)%slides.length;
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
+    if(location.hash!=='#s'+(i+1)) history.replaceState(null,'','#s'+(i+1)); }
+  window.__show=show;
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='PageDown')show(i+1);
+    else if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1); });
+  const start=(location.hash.match(/^#s(\d+)$/)||[])[1]; show(start?(+start-1):0);
+})();
+</script>
+</body></html>

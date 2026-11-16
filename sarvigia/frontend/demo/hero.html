@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent;overflow:hidden}</style></head>
+<body>
+<canvas id="c" style="width:520px;height:620px"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+const c=document.getElementById('c');
+const r=new THREE.WebGLRenderer({canvas:c,alpha:true,antialias:true});
+r.setPixelRatio(2); r.setSize(520,620); if(r.outputEncoding!==undefined) r.outputEncoding=THREE.sRGBEncoding;
+const sc=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(30,520/620,0.1,100); cam.position.set(0,1.05,6.4); cam.lookAt(0,0.25,0);
+sc.add(new THREE.AmbientLight(0xffffff,0.95));
+const k=new THREE.DirectionalLight(0xffffff,1.1); k.position.set(3,5,4); sc.add(k);
+const rim=new THREE.DirectionalLight(0x8fb4ff,0.55); rim.position.set(-4,2,-3); sc.add(rim);
+new THREE.GLTFLoader().load('/assets/alpaca.glb',g=>{
+  const m=g.scene, b=new THREE.Box3().setFromObject(m), s2=b.getSize(new THREE.Vector3()), c2=b.getCenter(new THREE.Vector3());
+  const s=1.5/s2.y; m.scale.setScalar(s); m.position.set(-c2.x*s,-b.min.y*s,-c2.z*s); m.rotation.y=-1.15;
+  const red=new THREE.MeshStandardMaterial({color:0xd91023,roughness:.55}), white=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.6});
+  const base=new THREE.Mesh(new THREE.BoxGeometry(s2.x*0.9,s2.y*0.05,s2.z*0.42),red), st=new THREE.Mesh(new THREE.BoxGeometry(s2.x*0.92,s2.y*0.055,s2.z*0.10),white);
+  const mn=new THREE.Group(); mn.add(base); mn.add(st); mn.position.set(c2.x,c2.y+s2.y*0.06,c2.z); m.add(mn);
+  sc.add(m);
+  let mx=new THREE.AnimationMixer(m); const cl=THREE.AnimationClip.findByName(g.animations,'Idle')||g.animations[0]; if(cl) mx.clipAction(cl).play();
+  mx.update(0.5);
+  r.render(sc,cam); window.__ready=1;
+});
+</script></body></html>

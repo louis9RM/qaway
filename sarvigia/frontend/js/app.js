@@ -153,6 +153,8 @@ function finishDraw(){
   (document.getElementById('maphint')||{style:{}}).style.display='none';
   refreshOverlay(); updateReadout();
   buscarFechas();   // paso 2: buscar fechas disponibles
+  if(window.__openSheet) window.__openSheet('analista');   // reabrir Analyst para “Analyze area”
+  toast('✅ Area drawn — tap “Analyze area”.',4500);
 }
 
 // ---------- Paso 2: buscar pasadas — Qaway elige SOLO las 2 últimas (automático) ----------
@@ -238,11 +240,12 @@ document.getElementById('draw').onclick=()=>{
   map.getSource('aoi') && map.getSource('aoi').setData(empty());
   document.getElementById('drawhint').textContent='Tap points on the map; double-tap to close.';
   (document.getElementById('maphint')||{style:{}}).style.display='';
-  (document.getElementById('maphint')||{style:{}}).innerHTML='Toca el mapa para marcar puntos; <b>doble toque</b> para cerrar el polígono.';
+  (document.getElementById('maphint')||{style:{}}).innerHTML='Tap the map to mark points; <b>double-tap</b> to close the polygon.';
+  if(window.closeQawaySheet) window.closeQawaySheet();   // cierra la hoja para poder tocar el mapa
   closeSide();
 };
 document.getElementById('clear').onclick=clearAOI;
-document.getElementById('analyze').onclick=analyzeAOI;
+document.getElementById('analyze').onclick=()=>{ state.modoResultado='analista'; analyzeAOI(); };
 
 function demoJob(){
   const ov=document.getElementById('joboverlay'),bar=document.getElementById('jobbar'),step=document.getElementById('jobstep');
@@ -303,8 +306,35 @@ function seguirJob(id){
 
 // MODO POLÍGONO (analista): NO voz → tablero estadístico riguroso en pantalla.
 function narrarAnalisis(stats){
-  try{ speechSynthesis.cancel(); }catch(e){}   // asegurar que no hable en modo analista
-  mostrarEstadisticas(stats);
+  // Analista (polígono) → tablero estadístico, sin voz.
+  if(state.modoResultado==='analista'){
+    try{ speechSynthesis.cancel(); }catch(e){}
+    mostrarEstadisticas(stats);
+    return;
+  }
+  // Voz (conductor) → respuesta hablada, fácil, SIN tablero.
+  narrarPorVoz(stats);
+}
+// El conductor recibe el diagnóstico por VOZ (y en el chat), sin estadísticas.
+async function narrarPorVoz(stats){
+  const contexto={ zona: state.aoi? state.aoi.name : 'your area',
+                   bbox: state.aoi? state.aoi.bbox : null,
+                   stats_cambio: stats, tiempo: ctxTiempo() };
+  if(state.ubicacion) contexto.ubicacion=state.ubicacion;
+  const pregunta = state.idioma==='en'
+    ? 'Give me the diagnosis of my area in simple words.'
+    : 'Dame el diagnóstico de mi zona en palabras simples.';
+  const typing = (typeof addTyping==='function') ? addTyping() : null;
+  try{
+    const res=await fetch(CFG.API_BASE+'/preguntar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pregunta, idioma:state.idioma, nivel:'sencillo', contexto})});
+    const d=await res.json();
+    const txt=d.respuesta||'';
+    if(typing) typing.remove();
+    if(typeof addBubble==='function') addBubble(txt,'qa');
+    speak(txt);
+    toast('Qaway analyzed your area ✔',2500);
+  }catch(e){ if(typing) typing.remove(); toast('Analysis ready, but I could not narrate it.',3500); }
 }
 
 // ---------- Tema / menú / util ----------
@@ -318,7 +348,6 @@ function openSide(){side.classList.add('open');scrim.classList.add('show');}
 function closeSide(){side.classList.remove('open');scrim.classList.remove('show');}
 document.getElementById('hamb').onclick=()=> side.classList.contains('open')?closeSide():openSide();
 scrim.onclick=closeSide;
-document.getElementById('about').onclick=()=>toast('SAR = radar that measures the surface day/night and through clouds. NISAR (L-band) sees under vegetation and detects millimeter movements → early landslide warning.',6000);
 
 let toastTimer=null;
 function toast(msg,ms=3200){
@@ -402,6 +431,7 @@ function usarMiUbicacion(km){
   km = km || +document.getElementById('radiusKm').value || 1;
   if(!navigator.geolocation){ toast('Your device does not support GPS.'); return; }
   state.autoAnalizar=true;   // GPS/voz → tras dibujar el corredor, analiza solo
+  state.modoResultado='voz'; // conductor → resultado por VOZ (sin tablero)
   toast('📍 Getting your location…',2500);
   navigator.geolocation.getCurrentPosition(
     pos=>{ guardarUbicacion(pos.coords.latitude, pos.coords.longitude);
@@ -492,26 +522,43 @@ function speak(text,lang){
   }catch(e){}
 }
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+// ---------- Chat (voz + texto, estilo WhatsApp) ----------
+function _chatBox(){ return document.getElementById('chatBox'); }
+function _clean(t){ return (t||'').replace(/[*_#`>]+/g,'').replace(/\n{3,}/g,'\n\n').trim(); }
+function addBubble(text, who){
+  const box=_chatBox(); if(!box) return null;
+  const e=box.querySelector('.chat-empty'); if(e) e.remove();
+  const b=document.createElement('div');
+  b.className='bubble '+(who==='me'?'me':'qa');
+  if(who==='me'){ b.textContent=text; }
+  else { b.innerHTML='<div class="who">🦙 Qaway</div>'; b.appendChild(document.createTextNode(_clean(text))); }
+  box.appendChild(b); box.scrollTop=box.scrollHeight; return b;
+}
+function addTyping(){
+  const box=_chatBox(); if(!box) return null;
+  const e=box.querySelector('.chat-empty'); if(e) e.remove();
+  const b=document.createElement('div'); b.className='bubble qa typing';
+  b.innerHTML='<div class="who">🦙 Qaway</div>…'; box.appendChild(b); box.scrollTop=box.scrollHeight; return b;
+}
+
 function startVoice(){
   if(!SR){ toast('Your browser does not support voice recognition. Use Chrome on Android, or type your question.',5000); return; }
   const rec=new SR(); rec.lang=voiceLang(); rec.interimResults=false; rec.maxAlternatives=1;
   const mic=document.getElementById('micBtn');
-  mic.classList.add('listening'); mic.textContent='Listening…';
-  rec.onresult=e=>{ const txt=e.results[0][0].transcript.toLowerCase();
-    toast('I heard: “'+txt+'”',3500); interpretarComando(txt); };
+  mic.classList.add('rec');
+  rec.onresult=e=>{ const txt=e.results[0][0].transcript; interpretarComando(txt); };
   rec.onerror=()=>{ toast('I did not catch that, try again.',3000); };
-  rec.onend=()=>{ mic.classList.remove('listening'); mic.textContent='Ask by voice'; };
+  rec.onend=()=>{ mic.classList.remove('rec'); };
   rec.start();
 }
 // 100% AGENTIC: todo va al LLM; él decide si responder o analizar (sin plantillas).
 function interpretarComando(txt){ preguntarAgente(txt); }
-// 🧠 Pregunta al agente LLM (backend → Ollama) y responde por voz + texto
+// 🧠 Pregunta al agente LLM (backend) y responde por voz + burbuja de chat
 async function preguntarAgente(pregunta){
-  const mic=document.getElementById('micBtn');
-  // Capturamos la ubicación UNA vez (best-effort) y queda disponible para CUALQUIER
-  // pregunta → el LLM decide si la usa; no dependemos de frases fijas.
+  addBubble(pregunta,'me');
+  const inp=document.getElementById('askText'); if(inp) inp.value='';
+  const typing=addTyping();
   if(!state.ubicacion){ await capturarUbicacion(); }
-  toast('🧠 Qaway is thinking…',2500); mic.textContent='Thinking…';
   const contexto={ tiempo: ctxTiempo() };
   if(state.aoi){ contexto.zona=state.aoi.name; contexto.bbox=state.aoi.bbox; }
   if(state.ubicacion) contexto.ubicacion=state.ubicacion;
@@ -521,20 +568,60 @@ async function preguntarAgente(pregunta){
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
     const r=data.respuesta||'';
+    if(typing) typing.remove();
+    addBubble(r,'qa');
     speak(r);
-    toast('Qaway answered ✔',2500);
-    // Si el LLM decidió ANALIZAR la zona → el frontend ejecuta la acción
     if(data.accion && data.accion.tipo==='analizar'){
       const km=data.accion.km||1;
       document.getElementById('radiusKm').value=km;
       setTimeout(()=>usarMiUbicacion(km), 400);
     }
-  }catch(err){ toast('Could not reach the Qaway agent (is the backend up?).',4500); }
-  finally{ mic.textContent='Ask by voice'; }
+  }catch(err){ if(typing) typing.remove(); addBubble('⚠️ Could not reach Qaway (is it online?).','qa'); }
 }
 document.getElementById('micBtn').onclick=startVoice;
 document.getElementById('askBtn').onclick=()=>{ const t=document.getElementById('askText').value.trim(); if(t) preguntarAgente(t); };
 document.getElementById('askText').addEventListener('keydown',e=>{ if(e.key==='Enter'){ const t=e.target.value.trim(); if(t) preguntarAgente(t); }});
+
+// ---------- Hojas independientes: cada botón abre SOLO su panel ----------
+(function(){
+  const side=document.getElementById('side'), bd=document.getElementById('sheetBackdrop');
+  const pv=document.getElementById('panelVoz'), pa=document.getElementById('panelAnalista');
+  function openSheet(tab){
+    if(pv) pv.style.display = tab==='voz' ? '' : 'none';
+    if(pa) pa.style.display = tab==='analista' ? '' : 'none';
+    if(side) side.classList.add('sheet-open'); if(bd) bd.classList.add('on');
+  }
+  function closeSheet(){ if(side) side.classList.remove('sheet-open'); if(bd) bd.classList.remove('on'); }
+  window.__openSheet=openSheet;
+  if(bd) bd.onclick=closeSheet;
+  const h=document.getElementById('sheetHandle'); if(h) h.onclick=closeSheet;
+  window.closeQawaySheet=closeSheet;
+})();
+
+// ---------- Botones flotantes: arrastrables con el dedo + abrir su hoja ----------
+(function(){
+  const fabs=document.querySelector('.fabs'); if(!fabs) return;
+  let down=false, moved=false, sx=0, sy=0, ox=0, oy=0;
+  fabs.style.touchAction='none';
+  fabs.addEventListener('pointerdown',e=>{
+    down=true; moved=false; sx=e.clientX; sy=e.clientY;
+    const r=fabs.getBoundingClientRect(); ox=r.left; oy=r.top;
+    fabs.style.transform='none'; fabs.style.left=ox+'px'; fabs.style.top=oy+'px'; fabs.style.bottom='auto';
+    try{ fabs.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  fabs.addEventListener('pointermove',e=>{
+    if(!down) return; const dx=e.clientX-sx, dy=e.clientY-sy;
+    if(Math.abs(dx)+Math.abs(dy)>6) moved=true;
+    let nx=Math.max(6,Math.min(window.innerWidth -fabs.offsetWidth -6, ox+dx));
+    let ny=Math.max(60,Math.min(window.innerHeight-fabs.offsetHeight-6, oy+dy));
+    fabs.style.left=nx+'px'; fabs.style.top=ny+'px';
+  });
+  fabs.addEventListener('pointerup',()=>{ down=false; });
+  // si fue arrastre, cancelar el click para no abrir la hoja
+  fabs.addEventListener('click',e=>{ if(moved){ e.stopPropagation(); e.preventDefault(); moved=false; } }, true);
+  // abrir hoja al tocar (no arrastrar)
+  document.querySelectorAll('.fab').forEach(f=>f.addEventListener('click',()=>{ if(!moved && window.__openSheet) window.__openSheet(f.dataset.open); }));
+})();
 
 // ---------- Tablero del ANALISTA (modo polígono): estadística rigurosa ----------
 let spCharts=[];
@@ -627,3 +714,4 @@ resetReadout();
 bienvenida();   // Qaway se presenta por voz en el primer toque (según la hora)
 map.on('load', marcarMiUbicacionAuto);   // marca al usuario con su GPS al entrar
 })();
+
