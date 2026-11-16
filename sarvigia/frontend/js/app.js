@@ -429,14 +429,15 @@ async function analizarCorredor(lon,lat,searchKm){
 
 function usarMiUbicacion(km){
   km = km || +document.getElementById('radiusKm').value || 1;
-  if(!navigator.geolocation){ toast('Your device does not support GPS.'); return; }
   state.autoAnalizar=true;   // GPS/voz → tras dibujar el corredor, analiza solo
   state.modoResultado='voz'; // conductor → resultado por VOZ (sin tablero)
+  const usarCentro=()=>{ const c=map.getCenter(); guardarUbicacion(c.lat,c.lng); analizarCorredor(c.lng,c.lat,km); };
+  if(!navigator.geolocation){ toast('No GPS — using the map center.',3000); usarCentro(); return; }
   toast('📍 Getting your location…',2500);
   navigator.geolocation.getCurrentPosition(
     pos=>{ guardarUbicacion(pos.coords.latitude, pos.coords.longitude);
            analizarCorredor(pos.coords.longitude, pos.coords.latitude, km); },
-    err=>{ toast('Could not get your location (permission denied or no signal).',4000); },
+    err=>{ toast('No GPS — using the map center.',3000); usarCentro(); },
     {enableHighAccuracy:true, timeout:10000, maximumAge:0}
   );
 }
@@ -457,11 +458,13 @@ async function guardarUbicacion(lat,lon){
   return state.ubicacion;
 }
 function capturarUbicacion(){
+  // Sin GPS (típico en PC) → usa el CENTRO DEL MAPA (lo que el usuario busca/mira).
+  const fallback=async()=>{ try{ const c=map.getCenter(); return await guardarUbicacion(c.lat,c.lng); }catch(_){ return null; } };
   return new Promise(res=>{
-    if(!navigator.geolocation){ res(null); return; }
+    if(!navigator.geolocation){ fallback().then(res); return; }
     navigator.geolocation.getCurrentPosition(
       async pos=>{ res(await guardarUbicacion(pos.coords.latitude,pos.coords.longitude)); },
-      ()=>res(null), {enableHighAccuracy:true,timeout:8000,maximumAge:60000});
+      ()=>{ fallback().then(res); }, {enableHighAccuracy:true,timeout:8000,maximumAge:60000});
   });
 }
 
