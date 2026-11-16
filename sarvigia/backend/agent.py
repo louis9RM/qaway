@@ -62,12 +62,16 @@ TOOLS = [
             "description": (
                 "Inicia el ANÁLISIS de radar NISAR alrededor de la ubicación del usuario "
                 "(dibuja el corredor de la carretera y procesa cambio + deformación). Úsalo "
-                "cuando el usuario pida analizar/escanear/revisar su zona o a X km a la redonda. "
-                "Pasa 'km' si menciona una distancia (por defecto 1)."
+                "cuando el usuario pida analizar/escanear/revisar su zona o a cierta distancia a la redonda. "
+                "Pasa 'metros' si dice metros (ej. '100 metros' → metros=100) o 'km' si dice kilómetros "
+                "(ej. '2 km' → km=2). Por defecto 1 km."
             ),
             "parameters": {
                 "type": "object",
-                "properties": {"km": {"type": "number", "description": "radio en km (opcional)"}},
+                "properties": {
+                    "km": {"type": "number", "description": "radio en KILÓMETROS (cuando el usuario dice km)"},
+                    "metros": {"type": "number", "description": "radio en METROS (cuando el usuario dice metros, ej. 100 m = 0.1 km)"}
+                },
                 "required": [],
             },
         },
@@ -533,7 +537,11 @@ def responder(pregunta: str, idioma: str = "es", nivel: str = "sencillo",
                         try: args = json.loads(args)
                         except Exception: args = {}
                     if name == "analizar_mi_zona":
-                        try: km = float(args.get("km") or 1)
+                        try:
+                            if args.get("metros") not in (None, "", 0):
+                                km = float(args.get("metros")) / 1000.0   # metros → km
+                            else:
+                                km = float(args.get("km") or 1)
                         except Exception: km = 1.0
                         km = max(0.05, min(20.0, km))
                         accion = {"tipo": "analizar", "km": km}
